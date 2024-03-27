@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from datetime import timedelta
 from homeassistant.const import TEMP_CELSIUS, ATTR_TEMPERATURE
-from homeassistant.util.temperature import convert as convert_temperature
+#from homeassistant.util.temperature import convert as convert_temperature
 from homeassistant.helpers.entity import Entity
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -166,16 +166,22 @@ class AirzonecloudDaikinDevice(ClimateEntity):
     @property
     def min_temp(self) -> float:
         """Return the minimum temperature."""
+        return self._azc_device.min_temperature
+        """
         return convert_temperature(
             self._azc_device.min_temperature, TEMP_CELSIUS, self.temperature_unit
         )
+        """
 
     @property
     def max_temp(self) -> float:
         """Return the maximum temperature."""
+        return self._azc_device.max_temperature
+        """
         return convert_temperature(
             self._azc_device.max_temperature, TEMP_CELSIUS, self.temperature_unit
         )
+        """
 
 
 class AirzonecloudDaikinInstallation(Entity):
