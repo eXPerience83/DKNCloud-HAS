@@ -2,10 +2,12 @@
 
 **DKN Cloud for HASS** is a custom integration for Home Assistant that allows you to view and control all your zones registered on your Daikin Airzone Cloud (dkn.airzonecloud.com) account directly from Home Assistant.
 
+![DKN Cloud for HASS Screenshot](screenshot.png)
+
 ## Why this Fork?
 
-This project is a fork of [fitamix/DaikinDKNCloud-HomeAssistant](https://github.com/fitamix/DaikinDKNCloud-HomeAssistant) (which itself is a fork of [max13fr/Airzonecloud-HomeAssistant](https://github.com/max13fr/Airzonecloud-HomeAssistant)) by the original authors @max13fr and @fitamix.  
-In our fork, we have added a configuration interface via Home Assistant's config flow. This allows users to configure the integration through the UI instead of manually editing the `configuration.yaml`. In addition, we have updated the installation instructions to include an option for installation via HACS.
+This project is a fork of [fitamix/DaikinDKNCloud-HomeAssistant](https://github.com/fitamix/DaikinDKNCloud-HomeAssistant) (which itself is a fork of [max13fr/AirzonecloudDaikin-HomeAssistant](https://github.com/max13fr/AirzonecloudDaikin-HomeAssistant)) by the original authors @max13fr and @fitamix.  
+If you're looking for the main Airzone Cloud (airzonecloud.com) integration, please refer to [max13fr/Airzonecloud-HomeAssistant](https://github.com/max13fr/Airzonecloud-HomeAssistant).
 
 ## Introduction
 
