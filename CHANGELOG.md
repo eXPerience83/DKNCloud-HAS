@@ -11,5 +11,7 @@ All notable changes to this project will be documented in this file.
 - Updated issue tracker link to point to [https://github.com/eXPerience83/DKNCloud-HAS/issues](https://github.com/eXPerience83/DKNCloud-HAS/issues).
 
 ### Changed
+- Removed the external dependency on `AirzoneCloudDaikin` by eliminating the `"requirements"` field from `manifest.json`.
+- Updated HACS configuration in `hacs.json` to reflect the new project name "DKN Cloud for HASS".
 - Forked from [fitamix/DaikinDKNCloud-HomeAssistant](https://github.com/fitamix/DaikinDKNCloud-HomeAssistant), which itself is a fork of [max13fr/Airzonecloud-HomeAssistant](https://github.com/max13fr/Airzonecloud-HomeAssistant).
 - Minor documentation updates to reflect the new configuration options and installation process.
