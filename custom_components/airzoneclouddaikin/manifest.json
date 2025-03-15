@@ -1,8 +1,8 @@
 {
   "domain": "airzoneclouddaikin",
   "name": "DKN Cloud for HASS",
-  "documentation": "https://github.com/fitamix/AirzonecloudDaikin-HomeAssistant",
-  "issue_tracker": "https://github.com/eXPerience83/DKNCloud-HAS/issues",
+  "documentation": "https://github.com/eXPerience83/DKNCloud-HASS",
+  "issue_tracker": "https://github.com/eXPerience83/DKNCloud-HASS/issues",
   "dependencies": [],
   "after_dependencies": ["http"],
   "codeowners": ["@max13fr", "@fitamix", "eXPerience83"],
