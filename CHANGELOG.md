@@ -16,3 +16,6 @@ All notable changes to this project will be documented in this file.
 - Updated repository URL references from "DKNCloud-HAS" to "DKNCloud-HASS".
 - Forked from [fitamix/DaikinDKNCloud-HomeAssistant](https://github.com/fitamix/DaikinDKNCloud-HomeAssistant), which itself is a fork of [max13fr/Airzonecloud-HomeAssistant](https://github.com/max13fr/Airzonecloud-HomeAssistant).
 - Minor documentation updates to reflect the new configuration options and installation process.
+- 
+### Fixed
+- Added missing `__init__.py` to properly load the integration and avoid "No setup or config entry setup function defined" error.
