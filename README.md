@@ -1,92 +1,55 @@
-# Airzone Cloud Daikin plugin for Home Assistant
+# DKN Airzone Cloud
 
-## Why this fork?
-This project is a fork of https://github.com/max13fr/Airzonecloud-HomeAssistant from max13fr
+**DKN Airzone Cloud** is a custom integration for Home Assistant that allows you to view and control all your zones registered on your Daikin Airzone Cloud (dkn.airzonecloud.com) account directly from Home Assistant.
 
-I wanted to view & control my Daikin Airzone Cloud from [dkn.airzonecloud.com](https://dkn.airzonecloud.com) with home assistant but with the max13fr code I had an error:
-```
-ERROR (MainThread) [homeassistant.config] Platform error: climate - No module named 'homeassistant.util.temperature'
-Traceback (most recent call last):
-  File "/usr/src/homeassistant/homeassistant/config.py", line 1560, in async_process_component_config
-    platform = p_integration.get_platform(domain)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/src/homeassistant/homeassistant/loader.py", line 1010, in get_platform
-    return self._load_platform(platform_name)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/src/homeassistant/homeassistant/loader.py", line 1025, in _load_platform
-    cache[full_name] = self._import_platform(platform_name)
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/src/homeassistant/homeassistant/loader.py", line 1058, in _import_platform
-    return importlib.import_module(f"{self.pkg_path}.{platform_name}")
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
-  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-  File "/config/custom_components/airzoneclouddaikin/climate.py", line 5, in <module>
-    from homeassistant.util.temperature import convert as convert_temperature
-ModuleNotFoundError: No module named 'homeassistant.util.temperature'
-```
+## Why this Fork?
 
-So I have made this fork to avoid that error. And with a few changes, I've managed to get it working. Basically I have commented on the conversion that causes the error and I do not notice any errors in its use.
+This project is a fork of [fitamix/DaikinDKNCloud-HomeAssistant](https://github.com/fitamix/DaikinDKNCloud-HomeAssistant) (which itself is a fork of [max13fr/Airzonecloud-HomeAssistant](https://github.com/max13fr/Airzonecloud-HomeAssistant)) by the original authors @max13fr and @fitamix.  
+In our fork, we have added a configuration interface via Home Assistant's config flow. This allows users to configure the integration through the UI instead of editing the `configuration.yaml` manually. In addition, we have updated the installation instructions to include an option for installation via HACS.
 
 ## Introduction
 
-Allow to view & control all your zones register on your *Daikin* Airzone Cloud ([dkn.airzonecloud.com](https://dkn.airzonecloud.com)) account from [Home Assistant](https://www.home-assistant.io/).
+The integration lets you view and control your Daikin Airzone Cloud zones from Home Assistant. It resolves previous issues such as errors with temperature conversion by commenting out the problematic code. In this version, we've also added a configuration flow that validates user input.  
+For example, the `scan_interval` parameter is now validated as an integer (with a default value of 10 seconds) and includes a warning not to set it too low to avoid potential bans from Airzone.
 
-If you're looking for the main Airzone Cloud ([airzonecloud.com](https://airzonecloud.com)), use this plugin : https://github.com/max13fr/Airzonecloud-HomeAssistant
+If you're looking for the main Airzone Cloud (airzonecloud.com) integration, please refer to [max13fr/Airzonecloud-HomeAssistant](https://github.com/max13fr/Airzonecloud-HomeAssistant).
 
-![Screenshot](screenshot.png)
+## Installation
 
-## Install / upgrade
+### Manual Installation
 
-### Add module
+1. Create the directory `custom_components` in your Home Assistant configuration folder (if it doesn't already exist).
+2. Copy the entire `airzoneclouddaikin` folder from this repository into the `custom_components` folder.
+3. Restart Home Assistant.
 
-In your home assistant directory (where you have your **configuration.yaml**) :
+Make sure to update your configuration (if needed) as the integration is now configured via the UI.
 
-- create the directory **custom_components** if not already existing
-- copy **custom_components/airzoneclouddaikin** directory from this github repository inside your **custom_components**. In case of upgrade, you can delete the **airzoneclouddaikin** first then copy the new one.
+### Installation via HACS
 
-Finally, you should have the following tree :
+DKN Airzone Cloud can now be installed as a custom integration through HACS.
 
-- configuration.yaml
-- custom_components/
-  - airzoneclouddaikin/
-    - \_\_init\_\_.py
-    - climate.py
-    - const.py
-    - manifest.py
+1. Open HACS in Home Assistant.
+2. Go to **Integrations**.
+3. Click on the three-dot menu in the top right corner and select **Custom repositories**.
+4. Enter the URL of this repository:  
+   `https://github.com/eXPerience83/DKNCloud-HAS`
+5. Set the **Category** to **Integration**.
+6. Click **Add**.
+7. Once added, search for "DKN Airzone Cloud" in HACS and install the integration.
+8. Restart Home Assistant if prompted.
 
-### Configure
+## Configuration
 
-In your **configuration.yaml** add the following lines :
+After installation, you can add the integration via the Home Assistant UI. Click on **Settings** > **Devices & Services** > **Add Integration**, search for "DKN Airzone Cloud", and follow the prompts.  
+The configuration form includes the following parameters:
+- **Username**: Your Airzone Cloud account email.
+- **Password**: Your Airzone Cloud account password.
+- **Scan Interval**: Time in seconds between each update. (Default is 10 seconds. It is recommended not to set this value too low to avoid bans from Airzone.)
 
-```
-climate:
-  - platform: airzoneclouddaikin
-    username: your@mail.com
-    password: yourpassword
-```
+## Issues
 
-You're username & password should match what you use to connect to https://dkn.airzonecloud.com
+If you encounter any issues, please open an issue at the [issue tracker](https://github.com/fitamix/AirzonecloudDaikin-HomeAssistant/issues) of the original project or contact the maintainers.
 
-Don't forget to restart your Home Assistant when you update your configuration.
+## License
 
-#### Change refresh interval
-
-Default refresh interval is **10 seconds**.
-
-You can increase or decrease this value but be warned that you can be banned by Airzone if you refresh too often.
-
-```
-climate:
-  - platform: airzoneclouddaikin
-    username: your@mail.com
-    password: yourpassword
-    scan_interval: 5
-```
+This project is licensed under the MIT License.
