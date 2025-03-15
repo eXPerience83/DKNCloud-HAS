@@ -32,7 +32,7 @@ Make sure to update your configuration (if needed) as the integration is now con
 2. Go to **Integrations**.
 3. Click on the three-dot menu in the top right corner and select **Custom repositories**.
 4. Enter the URL of this repository:  
-   `https://github.com/eXPerience83/DKNCloud-HAS`
+   `https://github.com/eXPerience83/DKNCloud-HASS`
 5. Set the **Category** to **Integration**.
 6. Click **Add**.
 7. Once added, search for "DKN Cloud for HASS" in HACS and install the integration.
@@ -48,7 +48,7 @@ The configuration form includes the following parameters:
 
 ## Issues
 
-If you encounter any issues, please open an issue at the [issue tracker](https://github.com/eXPerience83/DKNCloud-HAS/issues) of this repository.
+If you encounter any issues, please open an issue at the [issue tracker](https://github.com/eXPerience83/DKNCloud-HASS/issues) of this repository.
 
 ## License
 
