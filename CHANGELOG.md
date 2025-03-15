@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.1.1] - 2025-03-15
+### Fixed
+- Replaced `setup_platform` with `async_setup_entry` in `climate.py` to support Home Assistant's config entries.
+- Fixed integration with `AirzoneCloudDaikin` library in `climate.py`.
+- Updated entity setup to use `async_add_entities` instead of `add_entities`.
+- Optimized HVAC mode handling.
+- Removed unused `AirzonecloudDaikinInstallation` class.
+
+### Changed
+- Updated `manifest.json` version to `0.1.1`.
 
 ## [0.1.0] - 2025-03-15
 ### Added
