@@ -1,11 +1,11 @@
 {
   "domain": "airzoneclouddaikin",
-  "name": "Airzone Cloud Daikin",
+  "name": "DKN Airzone Cloud",
   "documentation": "https://github.com/fitamix/AirzonecloudDaikin-HomeAssistant",
   "issue_tracker": "https://github.com/fitamix/AirzonecloudDaikin-HomeAssistant/issues",
   "dependencies": [],
   "after_dependencies": ["http"],
-  "codeowners": ["@max13fr", "@fitamix"],
-  "version": "0.4.0",
-  "requirements": ["AirzoneCloudDaikin==0.4.0"]
+  "codeowners": ["@max13fr", "@fitamix", "eXPerience83"],
+  "version": "0.1.0",
+  "config_flow": true
 }
