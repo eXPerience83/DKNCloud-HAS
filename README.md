@@ -7,14 +7,18 @@
 ## Why this Fork?
 
 This project is a fork of [fitamix/DaikinDKNCloud-HomeAssistant](https://github.com/fitamix/DaikinDKNCloud-HomeAssistant) (which itself is a fork of [max13fr/AirzonecloudDaikin-HomeAssistant](https://github.com/max13fr/AirzonecloudDaikin-HomeAssistant)) by the original authors @max13fr and @fitamix.  
-For more details about the underlying Python package used for connecting to Airzone Cloud, please refer to [AirzoneCloudDaikin on PyPI](https://pypi.org/project/AirzoneCloudDaikin/).
+For more details about the underlying API implementation, please refer to the official Airzone Cloud Web API documentation at [developers.airzonecloud.com/docs/web-api](https://developers.airzonecloud.com/docs/web-api) and the [AirzoneCloudDaikin package](https://pypi.org/project/AirzoneCloudDaikin/) (which we are no longer using).
 
 ## Introduction
 
-The integration lets you view and control your Daikin Airzone Cloud zones from Home Assistant. It resolves previous issues such as errors with temperature conversion by commenting out the problematic code. In this version, we've also added a configuration flow that validates user input.  
-For example, the `scan_interval` parameter is now validated as an integer (with a default value of 10 seconds) and includes a warning not to set it too low to avoid potential bans from Airzone.
+This integration now uses our own API client (in the `airzone_api.py` module) to interact with the official Airzone Cloud API (adapted for dkn.airzonecloud.com).  
+The client authenticates by calling the `/login` endpoint and then fetches installations (and their devices) via the `/installations` endpoint.  
+If successful, the integration creates climate entities representing each device.
 
-If you're looking for the main Airzone Cloud (airzonecloud.com) integration, please refer to [max13fr/Airzonecloud-HomeAssistant](https://github.com/max13fr/Airzonecloud-HomeAssistant).
+The configuration flow collects the following parameters:
+- **Username**: Your Airzone Cloud account email.
+- **Password**: Your Airzone Cloud account password.
+- **Scan Interval**: Time in seconds between each update. (Default is 10 seconds. It is recommended not to set this value too low to avoid bans from Airzone.)
 
 ## Installation
 
@@ -23,8 +27,6 @@ If you're looking for the main Airzone Cloud (airzonecloud.com) integration, ple
 1. Create the directory `custom_components` in your Home Assistant configuration folder (if it doesn't already exist).
 2. Copy the entire `airzoneclouddaikin` folder from this repository into the `custom_components` folder.
 3. Restart Home Assistant.
-
-Make sure to update your configuration (if needed) as the integration is now configured via the UI.
 
 ### Installation via HACS
 
@@ -42,11 +44,15 @@ Make sure to update your configuration (if needed) as the integration is now con
 
 ## Configuration
 
-After installation, you can add the integration via the Home Assistant UI. Click on **Settings** > **Devices & Services** > **Add Integration**, search for "DKN Cloud for HASS", and follow the prompts.  
-The configuration form includes the following parameters:
-- **Username**: Your Airzone Cloud account email.
-- **Password**: Your Airzone Cloud account password.
-- **Scan Interval**: Time in seconds between each update. (Default is 10 seconds. It is recommended not to set this value too low to avoid bans from Airzone.)
+After installation, add the integration via the Home Assistant UI by going to **Settings** > **Devices & Services** > **Add Integration**, searching for "DKN Cloud for HASS", and following the prompts.
+
+## Debugging
+
+To help with troubleshooting, the integration includes detailed logging:
+- Login and installation retrieval results are logged.
+- If no installations or devices are found, warnings are logged.
+
+Check your Home Assistant logs for messages starting with "DKN Cloud for HASS" or "AirzoneAPI" to debug issues.
 
 ## Issues
 
