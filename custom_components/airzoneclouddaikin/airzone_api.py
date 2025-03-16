@@ -1,6 +1,6 @@
 """Module to interact with the Airzone Cloud API (adapted for dkn.airzonecloud.com).
 
-This module implements the following:
+This module implements:
 - Authentication via the /login endpoint.
 - Fetching installations (and devices) via the /installations endpoint.
 
@@ -13,7 +13,7 @@ from typing import List, Dict
 
 _LOGGER = logging.getLogger(__name__)
 
-# Base URL for dkn.airzonecloud.com API
+# Base URL for dkn.airzonecloud.com API; adjust if versioning is required (e.g., /api/v1)
 BASE_URL = "https://dkn.airzonecloud.com/api"
 
 class AirzoneAPI:
