@@ -68,7 +68,7 @@ class AirzonecloudDaikinDevice(ClimateEntity):
 
     def __init__(self, device_data: Dict, installation: Dict):
         """Initialize the climate entity.
-        
+
         :param device_data: Dictionary with device information.
         :param installation: Dictionary with installation information.
         """
@@ -126,18 +126,18 @@ class AirzonecloudDaikinDevice(ClimateEntity):
 
     def set_temperature(self, **kwargs) -> None:
         """Set a new target temperature.
-        
+
         Here you should implement the API call to change the device's temperature.
         """
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is not None:
             _LOGGER.debug("Setting temperature to %s", temperature)
-            # Implement the API call here.
+            # TODO: Implement the API call here.
             pass
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set a new HVAC mode.
-        
+
         Here you should implement the API call to change the device's mode.
         """
         _LOGGER.debug("Setting HVAC mode to %s", hvac_mode)
@@ -154,25 +154,25 @@ class AirzonecloudDaikinDevice(ClimateEntity):
             }
             if hvac_mode in mode_map:
                 _LOGGER.debug("Changing mode via API to %s", mode_map[hvac_mode])
-                # Implement the API call here.
+                # TODO: Implement the API call here.
                 pass
 
     def turn_on(self) -> None:
         """Turn on the device.
-        
+
         Implement the API call to turn on the device.
         """
         _LOGGER.debug("Turning device on.")
-        # Implement the API call here.
+        # TODO: Implement the API call here.
         pass
 
     def turn_off(self) -> None:
         """Turn off the device.
-        
+
         Implement the API call to turn off the device.
         """
         _LOGGER.debug("Turning device off.")
-        # Implement the API call here.
+        # TODO: Implement the API call here.
         pass
 
     @property
