@@ -11,8 +11,9 @@ For more details about the underlying API implementation, please refer to the of
 
 ## Introduction
 
-This integration now uses our own API client (in the `airzone_api.py` module) to interact with the official Airzone Cloud API—adapted for dkn.airzonecloud.com.  
-The client authenticates by sending a POST request to the `/login` endpoint and then fetches installations (and their devices) via the `/installation_relations` endpoint. If successful, the integration creates climate entities representing each device.
+This integration now uses our own API client (in the `airzone_api.py` module) to interact with the official Airzone Cloud API (adapted for dkn.airzonecloud.com).  
+The client authenticates by calling the `/login` endpoint and then fetches installations (and their devices) via the `/installations` endpoint.  
+If successful, the integration creates climate entities representing each device.
 
 The configuration flow collects the following parameters:
 - **Username**: Your Airzone Cloud account email.
@@ -47,15 +48,16 @@ After installation, add the integration via the Home Assistant UI by going to **
 
 ## Debugging
 
-To help troubleshoot, the integration includes detailed logging in the API client and climate platform:
-- The client logs the result of the login attempt and the number of installations fetched.
-- If no installations or devices are found, a warning is logged.
+To help with troubleshooting, the integration includes detailed logging:
+- Login and installation retrieval results are logged.
+- If no installations or devices are found, warnings are logged.
 
-To enable debug logging for this integration, add the following to your `configuration.yaml`:
+Check your Home Assistant logs for messages starting with "DKN Cloud for HASS" or "AirzoneAPI" to debug issues.
 
-```yaml
-logger:
-  default: warning
-  logs:
-    custom_components.airzoneclouddaikin: debug
-    AirzoneAPI: debug
+## Issues
+
+If you encounter any issues, please open an issue at the [issue tracker](https://github.com/eXPerience83/DKNCloud-HASS/issues) of this repository.
+
+## License
+
+This project is licensed under the MIT License.
