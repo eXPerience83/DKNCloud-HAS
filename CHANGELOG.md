@@ -1,6 +1,21 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [0.1.2] - 2025-03-16
+### Added
+- **Airzone API Client:** New module `airzone_api.py` implementing the official Airzone Cloud Web API (adapted for dkn.airzonecloud.com) for authentication and fetching installations.
+- **Async Setup:** Updated `climate.py` now uses `async_setup_entry` to initialize the integration with config entries.
+- Detailed logging in `airzone_api.py` and `climate.py` for better debugging of API calls and data retrieval.
+
+### Fixed
+- Replaced external dependency on the AirzoneCloudDaikin package by using our own implementation.
+- Updated the version in `manifest.json` to 0.1.2.
+
+### Changed
+- Updated documentation in README.md to reflect changes.
+- Updated repository URLs and HACS configuration.
+
 ## [0.1.1] - 2025-03-15
 ### Fixed
 - Replaced `setup_platform` with `async_setup_entry` in `climate.py` to support Home Assistant's config entries.
