@@ -1,5 +1,5 @@
+"""Constants for DKN Cloud for HASS integration."""
 
-
-# #### CONF ####
+DOMAIN = "airzoneclouddaikin"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
