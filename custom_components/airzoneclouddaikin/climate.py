@@ -52,8 +52,11 @@ async def async_setup_entry(
         _LOGGER.warning("No installations found. Verify your credentials or API availability.")
 
     entities = []
-    # Each installation is assumed to be a dict with a 'devices' key (a list)
-    for installation in installations:
+    # Each installation is assumed to be a dict with a 'installation' key and a 'devices' key
+    for relation in installations:
+        installation = relation.get("installation")
+        if not installation:
+            continue
         devices: List[Dict] = installation.get("devices", [])
         _LOGGER.debug("Installation '%s' has %d devices", installation.get("name", "Unknown"), len(devices))
         for device in devices:
@@ -126,7 +129,7 @@ class AirzonecloudDaikinDevice(ClimateEntity):
 
     def set_temperature(self, **kwargs) -> None:
         """Set a new target temperature.
-
+        
         Here you should implement the API call to change the device's temperature.
         """
         temperature = kwargs.get(ATTR_TEMPERATURE)
@@ -137,7 +140,7 @@ class AirzonecloudDaikinDevice(ClimateEntity):
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set a new HVAC mode.
-
+        
         Here you should implement the API call to change the device's mode.
         """
         _LOGGER.debug("Setting HVAC mode to %s", hvac_mode)
@@ -159,7 +162,7 @@ class AirzonecloudDaikinDevice(ClimateEntity):
 
     def turn_on(self) -> None:
         """Turn on the device.
-
+        
         Implement the API call to turn on the device.
         """
         _LOGGER.debug("Turning device on.")
@@ -168,7 +171,7 @@ class AirzonecloudDaikinDevice(ClimateEntity):
 
     def turn_off(self) -> None:
         """Turn off the device.
-
+        
         Implement the API call to turn off the device.
         """
         _LOGGER.debug("Turning device off.")
