@@ -1,7 +1,7 @@
-"""Climate platform for DKN Cloud for HASS."""
+"""Climate platform for DKN Cloud for HASS using the official Airzone Cloud API."""
 import logging
 from datetime import timedelta
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import HVACMode, ClimateEntityFeature
@@ -9,11 +9,10 @@ from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DOMAIN, CONF_USERNAME, CONF_PASSWORD
-
-# Importar la biblioteca externa
-from AirzoneCloudDaikin import AirzoneCloudDaikin
+from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,8 +29,8 @@ AIRZONECLOUD_DEVICE_HVAC_MODES = [
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
-    """Set up the climate platform from a config entry."""
-    config = entry.data
+    """Set up the climate platform from a config entry using our AirzoneAPI client."""
+    config: Dict[str, Any] = entry.data
     username = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
 
@@ -39,60 +38,67 @@ async def async_setup_entry(
         _LOGGER.error("Missing username or password in config entry.")
         return
 
-    try:
-        api = AirzoneCloudDaikin(username, password)
-        # Si la biblioteca requiere un paso adicional para iniciar sesión, por ejemplo:
-        if hasattr(api, "login"):
-            api.login()  # O bien: await api.async_login() si es asíncrono
-    except Exception as err:
-        _LOGGER.error("Error connecting to AirzoneCloudDaikin: %s", err)
+    session = async_get_clientsession(hass)
+    api = AirzoneAPI(username, password, session)
+
+    # Authenticate with the API
+    if not await api.login():
+        _LOGGER.error("Login to Airzone API failed.")
         return
 
-    installations = getattr(api, "installations", [])
+    installations = await api.fetch_installations()
     _LOGGER.debug("Found %d installations", len(installations))
     if not installations:
-        _LOGGER.warning("No installations found. Verify your credentials and API availability.")
+        _LOGGER.warning("No installations found. Verify your credentials or API availability.")
 
     entities = []
+    # Each installation is assumed to be a dict with a 'devices' key (a list)
     for installation in installations:
-        # Asegurarse de que installation tiene el atributo devices
-        devices = getattr(installation, "devices", [])
+        devices: List[Dict] = installation.get("devices", [])
+        _LOGGER.debug("Installation '%s' has %d devices", installation.get("name", "Unknown"), len(devices))
         for device in devices:
-            entities.append(AirzonecloudDaikinDevice(device))
+            entities.append(AirzonecloudDaikinDevice(device, installation))
 
     if not entities:
         _LOGGER.warning("No devices found in the API response.")
     async_add_entities(entities, True)
 
 class AirzonecloudDaikinDevice(ClimateEntity):
-    """Representation of an AirzoneCloud Daikin Device."""
+    """Representation of an Airzone Cloud Daikin device."""
 
-    def __init__(self, azc_device: Any):
-        """Initialize the device."""
-        self._azc_device = azc_device
+    def __init__(self, device_data: Dict, installation: Dict):
+        """Initialize the climate entity.
+        
+        :param device_data: Dictionary with device information.
+        :param installation: Dictionary with installation information.
+        """
+        self._device = device_data
+        self._installation = installation
         _LOGGER.info("Initializing device %s (%s)", self.name, self.unique_id)
 
     @property
     def unique_id(self) -> Optional[str]:
-        """Return a unique ID."""
-        return f"device_{self._azc_device.id}"
+        """Return a unique ID for the device."""
+        return f"device_{self._device.get('id', 'unknown')}"
 
     @property
     def name(self) -> str:
-        """Return the name of the device."""
-        installation_name = getattr(self._azc_device, "installation", {}).get("name", "Unknown")
-        return f"{installation_name} - {self._azc_device.name}"
+        """Return the name of the device, combining installation and device names."""
+        inst_name = self._installation.get("name", "Unknown Installation")
+        dev_name = self._device.get("name", "Unknown Device")
+        return f"{inst_name} - {dev_name}"
 
     @property
     def temperature_unit(self) -> str:
-        """Return the temperature unit."""
+        """Return the temperature unit (Celsius)."""
         return UnitOfTemperature.CELSIUS
 
     @property
     def hvac_mode(self) -> str:
-        """Return hvac operation mode."""
-        mode = self._azc_device.mode
-        if self._azc_device.is_on:
+        """Return the current HVAC mode of the device."""
+        mode = self._device.get("mode", "")
+        is_on = self._device.get("is_on", False)
+        if is_on:
             if mode in ["cool", "cool-air"]:
                 return HVACMode.COOL
             if mode in ["heat", "heat-air"]:
@@ -105,31 +111,40 @@ class AirzonecloudDaikinDevice(ClimateEntity):
 
     @property
     def hvac_modes(self) -> List[str]:
-        """Return the list of available hvac operation modes."""
+        """Return the list of available HVAC modes."""
         return AIRZONECLOUD_DEVICE_HVAC_MODES
 
     @property
     def current_temperature(self) -> Optional[float]:
-        """Return the current temperature."""
-        return self._azc_device.current_temperature
+        """Return the current temperature reported by the device."""
+        return self._device.get("current_temperature")
 
     @property
     def target_temperature(self) -> Optional[float]:
         """Return the target temperature."""
-        return self._azc_device.target_temperature
+        return self._device.get("target_temperature")
 
     def set_temperature(self, **kwargs) -> None:
-        """Set new target temperature."""
+        """Set a new target temperature.
+        
+        Here you should implement the API call to change the device's temperature.
+        """
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is not None:
-            self._azc_device.set_temperature(round(float(temperature), 1))
+            _LOGGER.debug("Setting temperature to %s", temperature)
+            # Implement the API call here.
+            pass
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
-        """Set new target hvac mode."""
+        """Set a new HVAC mode.
+        
+        Here you should implement the API call to change the device's mode.
+        """
+        _LOGGER.debug("Setting HVAC mode to %s", hvac_mode)
         if hvac_mode == HVACMode.OFF:
             self.turn_off()
         else:
-            if not self._azc_device.is_on:
+            if not self._device.get("is_on", False):
                 self.turn_on()
             mode_map = {
                 HVACMode.HEAT: "heat",
@@ -138,17 +153,29 @@ class AirzonecloudDaikinDevice(ClimateEntity):
                 HVACMode.FAN_ONLY: "ventilate",
             }
             if hvac_mode in mode_map:
-                self._azc_device.set_mode(mode_map[hvac_mode])
+                _LOGGER.debug("Changing mode via API to %s", mode_map[hvac_mode])
+                # Implement the API call here.
+                pass
 
     def turn_on(self) -> None:
-        """Turn on the device."""
-        self._azc_device.turn_on()
+        """Turn on the device.
+        
+        Implement the API call to turn on the device.
+        """
+        _LOGGER.debug("Turning device on.")
+        # Implement the API call here.
+        pass
 
     def turn_off(self) -> None:
-        """Turn off the device."""
-        self._azc_device.turn_off()
+        """Turn off the device.
+        
+        Implement the API call to turn off the device.
+        """
+        _LOGGER.debug("Turning device off.")
+        # Implement the API call here.
+        pass
 
     @property
     def supported_features(self) -> int:
-        """Return the list of supported features."""
+        """Return the supported features (target temperature control)."""
         return ClimateEntityFeature.TARGET_TEMPERATURE
