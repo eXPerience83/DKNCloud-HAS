@@ -46,18 +46,21 @@ async def async_setup_entry(
         _LOGGER.error("Login to Airzone API failed.")
         return
 
-    installations = await api.fetch_installations()
-    _LOGGER.debug("Found %d installations", len(installations))
-    if not installations:
+    installations_relations = await api.fetch_installations()
+    _LOGGER.debug("Found %d installation relations", len(installations_relations))
+    if not installations_relations:
         _LOGGER.warning("No installations found. Verify your credentials or API availability.")
 
     entities = []
-    # Each installation is assumed to be a dict with a 'installation' key and a 'devices' key
-    for relation in installations:
+    # For each installation relation, extract the installation and then fetch its devices.
+    for relation in installations_relations:
         installation = relation.get("installation")
         if not installation:
             continue
-        devices: List[Dict] = installation.get("devices", [])
+        installation_id = installation.get("id")
+        if not installation_id:
+            continue
+        devices: List[Dict] = await api.fetch_devices(installation_id)
         _LOGGER.debug("Installation '%s' has %d devices", installation.get("name", "Unknown"), len(devices))
         for device in devices:
             entities.append(AirzonecloudDaikinDevice(device, installation))
@@ -71,7 +74,7 @@ class AirzonecloudDaikinDevice(ClimateEntity):
 
     def __init__(self, device_data: Dict, installation: Dict):
         """Initialize the climate entity.
-
+        
         :param device_data: Dictionary with device information.
         :param installation: Dictionary with installation information.
         """
