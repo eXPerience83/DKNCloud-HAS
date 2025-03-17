@@ -2,9 +2,10 @@
 
 This module implements:
 - Authentication via the /users/sign_in endpoint.
-- Fetching installations via the /api/installation_relations endpoint.
+- Fetching installations via the /installation_relations endpoint.
+- Fetching devices for a given installation via the /devices endpoint.
 
-Refer to: https://developers.airzonecloud.com/docs/web-api for API details.
+Refer to the original AirzoneCloudDaikin package for endpoint definitions.
 """
 
 import logging
@@ -13,15 +14,14 @@ from typing import List, Dict
 
 _LOGGER = logging.getLogger(__name__)
 
-# Base URL as defined in the original package
+# Base URL as used in the original package
 BASE_URL = "https://dkn.airzonecloud.com"
 
-# Update the login endpoint based on network inspection
+# Endpoints as defined in the original package
 API_LOGIN = "/users/sign_in"
-# Assuming the installation relations endpoint remains with /api prefix; si no, se debe ajustar también.
-API_INSTALLATION_RELATIONS = "/api/installation_relations"
-API_DEVICES = "/api/devices"
-API_EVENTS = "/api/events"
+API_INSTALLATION_RELATIONS = "/installation_relations"
+API_DEVICES = "/devices"
+API_EVENTS = "/events"
 
 class AirzoneAPI:
     """Client to interact with the Airzone Cloud API."""
@@ -45,9 +45,8 @@ class AirzoneAPI:
         headers = {"User-Agent": "DKNCloudForHASS/0.1.4"}
         try:
             async with self._session.post(url, json=payload, headers=headers) as response:
-                if response.status == 201:  # 201 Created is expected
+                if response.status == 201:
                     data = await response.json()
-                    # In the original library, the token is obtained from data["user"]["authentication_token"]
                     self.token = data.get("user", {}).get("authentication_token", "")
                     if self.token:
                         _LOGGER.debug("Login successful, token: %s", self.token)
@@ -65,7 +64,7 @@ class AirzoneAPI:
     async def fetch_installations(self) -> List[Dict]:
         """Fetch installations using the obtained token.
         
-        Sends a GET request to the /api/installation_relations endpoint.
+        Sends a GET request to the /installation_relations endpoint.
         Returns a list of installations if successful.
         """
         if not self.token:
@@ -89,4 +88,32 @@ class AirzoneAPI:
                     return []
         except Exception as err:
             _LOGGER.error("Exception fetching installations: %s", err)
+            return []
+
+    async def fetch_devices(self, installation_id: str) -> List[Dict]:
+        """Fetch devices for a given installation using the obtained token.
+        
+        Sends a GET request to the /devices endpoint with the installation_id parameter.
+        Returns a list of devices if successful.
+        """
+        url = f"{BASE_URL}{API_DEVICES}"
+        params = {
+            "format": "json",
+            "installation_id": installation_id,
+            "user_email": self._username,
+            "user_token": self.token
+        }
+        headers = {"User-Agent": "DKNCloudForHASS/0.1.4"}
+        try:
+            async with self._session.get(url, params=params, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    devices = data.get("devices", [])
+                    _LOGGER.debug("Fetched devices for installation %s: %s", installation_id, devices)
+                    return devices
+                else:
+                    _LOGGER.error("Failed to fetch devices for installation %s, status code: %s", installation_id, response.status)
+                    return []
+        except Exception as err:
+            _LOGGER.error("Exception fetching devices: %s", err)
             return []
