@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2025-03-16
+### Added
+- **Airzone API Client:** Updated module `airzone_api.py` now uses the endpoints from the original AirzoneCloudDaikin package:
+  - Login: `/users/sign_in`
+  - Installation Relations: `/installation_relations`
+  - Devices: `/devices`
+  - Events: `/events`
+- Added a method `fetch_devices(installation_id)` in `airzone_api.py` to retrieve devices for a given installation.
+- Updated `climate.py` to fetch devices per installation using `fetch_devices`.
+- Detailed logging added to all modules for debugging (login, fetching installations, fetching devices).
+
+### Fixed
+- Updated endpoints based on tests with curl.
+- Adjusted the base URL to "https://dkn.airzonecloud.com" (without adding "/api") as used in the original package.
+- Fixed import errors by ensuring `const.py` exports the required constants.
+- Set version in manifest.json to 0.1.5.
+
+### Changed
+- Documentation in README.md updated to reflect these changes.
+
 ## [0.1.2] - 2025-03-16
 ### Added
 - **Airzone API Client:** New module `airzone_api.py` implementing the official Airzone Cloud Web API (adapted for dkn.airzonecloud.com) for authentication and fetching installations.
