@@ -16,7 +16,7 @@ DATA_SCHEMA = vol.Schema({
     vol.Required(CONF_USERNAME): cv.string,
     vol.Required(CONF_PASSWORD): cv.string,
     vol.Required(CONF_SCAN_INTERVAL, default=10): vol.Coerce(int),
-    vol.Optional("force_heat_cold_auto", default=False): bool
+    vol.Optional("force_hvac_mode_auto", default=False): bool
 })
 
 class AirzoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -45,7 +45,7 @@ class AirzoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_USERNAME): cv.string,
             vol.Required(CONF_PASSWORD): cv.string,
             vol.Required(CONF_SCAN_INTERVAL, default=10): vol.All(vol.Coerce(int)),
-            vol.Optional("force_heat_cold_auto", default=False): bool
+            vol.Optional("force_hvac_mode_auto", default=False): bool
         })
 
         return self.async_show_form(
