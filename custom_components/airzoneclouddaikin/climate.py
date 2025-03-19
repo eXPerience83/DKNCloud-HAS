@@ -9,7 +9,7 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-HVACMode.AUTO = HVACMode("auto")  # Forced auto mode
+HVACMode.AUTO = HVACMode("auto")  # Forced auto mode (renamed to HVACMode.AUTO)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the climate platform from a config entry."""
@@ -76,11 +76,11 @@ class AirzoneClimate(ClimateEntity):
     def hvac_modes(self):
         """Return the list of supported HVAC modes.
         
-        Standard modes are included, and if 'HVACMode.AUTO' is enabled in the configuration,
+        Standard modes are included, and if 'force_hvac_mode_auto' is enabled in the configuration,
         HVACMode.AUTO is added.
         """
         modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.FAN_ONLY, HVACMode.DRY]
-        if self._config.get("HVACMode.AUTO", False):
+        if self._config.get("force_hvac_mode_auto", False):
             modes.append(HVACMode.AUTO)
         return modes
 
@@ -115,7 +115,7 @@ class AirzoneClimate(ClimateEntity):
     def turn_on(self):
         """Turn on the device by sending P1=1."""
         self._send_command("P1", 1)
-        self._hvac_mode = HVACMode.HEAT  # Default to heat when turned on.
+        self._hvac_mode = HVACMode.HEAT  # Default to HEAT when turned on.
         self.schedule_update_ha_state()
 
     def turn_off(self):
@@ -152,8 +152,8 @@ class AirzoneClimate(ClimateEntity):
         """Set the target temperature.
 
         Must be called after changing the mode.
-        For heat modes (HEAT or HVACMode.AUTO) use P8; for cool mode use P7.
-        The value is limited to the range provided by the API and sent as an integer with '.0'.
+        For HEAT or AUTO modes, use P8; for COOL mode use P7.
+        The value is constrained to the device limits and sent as an integer with ".0".
         """
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
@@ -177,7 +177,7 @@ class AirzoneClimate(ClimateEntity):
     def set_fan_speed(self, speed):
         """Set the fan speed.
 
-        Uses P3 for cool/ventilate modes and P4 for heat/auto modes.
+        Uses P3 for COOL/ventilate modes and P4 for HEAT/AUTO modes.
         """
         try:
             speed = int(speed)
