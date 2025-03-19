@@ -62,7 +62,6 @@ class AirzoneAPI:
         if not self.token:
             _LOGGER.error("Cannot fetch installations without a valid token.")
             return []
-        # Usamos query parameters para incluir el email y token, similar a lo probado para devices.
         url = f"{BASE_URL}{API_INSTALLATION_RELATIONS}"
         params = {"format": "json", "user_email": self._username, "user_token": self.token}
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
