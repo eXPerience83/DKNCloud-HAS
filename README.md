@@ -1,6 +1,6 @@
 # DKN Cloud for HASS
 
-DKN Cloud for HASS is a custom integration for Home Assistant that allows you to view and control your Daikin Airzone Cloud (dkn.airzonecloud.com) devices directly from Home Assistant.
+DKN Cloud for HASS is a custom integration for Home Assistant that allows you to view and control your Daikin Airzone Cloud (dkn.airzonecloud.com) devices directly from Home Assistant. This fork is specifically designed for the "DAIKIN ES.DKNWSERVER Wifi adapter".
 
 ## Why this Fork?
 
@@ -25,7 +25,7 @@ Basic control methods have been implemented in `climate.py`:
   - "3" for ventilate,
   - "4" for auto mode (HVACMode.AUTO, forced if enabled in the configuration),
   - "5" for dehumidify.
-- **set_temperature:** Sends an event with P8 (for heat or HVACMode.AUTO) or P7 (for cool) with temperature values (an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
+- **set_temperature:** Sends an event with P8 (for heat or HVACMode.AUTO) or P7 (for cool) with temperature values (must be an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
 - **set_fan_speed:** Uses P3 to adjust the fan speed in cold/ventilate modes and P4 in heat/auto modes.
 
 The API returns additional data (firmware, brand, available fan speeds, temperature limits, etc.) that the integration uses:
@@ -80,3 +80,5 @@ For further testing, refer to the file `info.md` for detailed information and ex
 This project is licensed under the MIT License.
 
 Additional note: Temperatures are adjusted to the limits provided by the device (for cold: min_limit_cold and max_limit_cold; for heat: min_limit_heat and max_limit_heat). Fan speed commands use P3 for cold and P4 for heat/auto. If you use the forced auto mode, be aware that the behavior of temperature and fan speed may vary.
+
+*This fork is intended for use with the DAIKIN ES.DKNWSERVER Wifi adapter.*
