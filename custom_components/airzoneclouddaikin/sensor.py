@@ -1,29 +1,43 @@
+"""Sensor platform for DKN Cloud for HASS."""
+import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
 
-from .airzone_api import AirzoneCloudDaikinAPI
-from .const import DOMAIN
-
-async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up sensor entities."""
-    api: AirzoneCloudDaikinAPI = hass.data[DOMAIN][entry.entry_id]
-    devices = await api.async_get_devices()
-    async_add_entities(AirzoneTemperatureSensor(device, api) for device in devices)
+_LOGGER = logging.getLogger(__name__)
 
 class AirzoneTemperatureSensor(SensorEntity):
-    """Representation of the Daikin Airzone Cloud temperature sensor."""
+    """Representation of a temperature sensor for an Airzone device (local_temp)."""
 
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-    _attr_device_class = "temperature"
-
-    def __init__(self, device, api):
+    def __init__(self, device_data: dict):
         """Initialize the sensor."""
-        self._device = device
-        self._api = api
-        self._attr_name = f"{device['name']} Temperature"
-        self._attr_unique_id = f"{device['id']}_temperature"
+        self._device_data = device_data
+        self._name = f"{device_data.get('name', 'Airzone Device')} Temperature"
+        self._state = None
+        self._unit_of_measurement = UnitOfTemperature.CELSIUS
+        self.update_state()
 
-    async def async_update(self):
-        """Fetch new state data."""
-        await self._api.async_update()
-        self._attr_native_value = self._api.get_device_temperature(self._device["id"])
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def state(self):
+        """Return the current temperature reading."""
+        return self._state
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement."""
+        return self._unit_of_measurement
+
+    def update_state(self):
+        """Update the state from device data."""
+        try:
+            self._state = float(self._device_data.get("local_temp"))
+        except (ValueError, TypeError):
+            self._state = None
+
+    def update(self):
+        """Update the sensor state."""
+        self.update_state()
