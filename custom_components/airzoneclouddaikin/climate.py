@@ -1,17 +1,15 @@
 """Climate platform for DKN Cloud for HASS using the Airzone Cloud API."""
+import asyncio
 import logging
 from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import (
-    ClimateEntityFeature,
-    HVACMode
-)
+from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode
 from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
 from .const import DOMAIN
 from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-HVAC_MODE_AUTO = HVACMode("auto")  # Nuevo modo para forzar el modo automático
+HVAC_MODE_AUTO = HVACMode("auto")  # Nuevo modo renombrado
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the climate platform from a config entry."""
@@ -201,4 +199,5 @@ class AirzoneClimate(ClimateEntity):
             }
         }
         _LOGGER.info("Sending command: %s", payload)
-        self._api._send_event(payload)
+        # Dispara la tarea asíncrona para enviar el evento.
+        asyncio.create_task(self._api.send_event(payload))
