@@ -15,6 +15,9 @@ All notable changes to this project will be documented in this file.
 - **Validación de temperatura.**
   - Ahora la temperatura enviada a la API siempre es un número entero con `.0`, asegurando compatibilidad con la API.
 
+### Changed
+- Minor adjustments in config_flow.py, climate.py, and README.md.
+
 **📌 Próximos pasos:**
 - Verificar si el modo "HVAC_MODE_AUTO" funciona correctamente en todas las máquinas.
 - Implementar soporte para más modos descubiertos por max13fr.
