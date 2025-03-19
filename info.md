@@ -6,8 +6,8 @@ Información Detallada sobre Modos "Px" y Ejemplos de Comandos Curl
    curl -v -X POST "https://dkn.airzonecloud.com/users/sign_in" -H "Content-Type: application/json" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -d "{\"email\": \"YOUR_EMAIL@example.com\", \"password\": \"YOUR_PASSWORD\"}"
    Respuesta esperada: JSON con "authentication_token".
 
-2. Obtener Instalaciones  
-   curl -v "https://dkn.airzonecloud.com/installation_relations/?format=json" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -H "Authorization: Bearer YOUR_TOKEN"
+2. Obtener Instalaciones(Usa query parameters para incluir el email y token)
+curl -v "https://dkn.airzonecloud.com/installation_relations/?format=json&user_email=YOUR_EMAIL@example.com&user_token=YOUR_TOKEN" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
 3. Obtener Dispositivos  
    curl -v "https://dkn.airzonecloud.com/devices/?format=json&installation_id=YOUR_INSTALLATION_ID&user_email=YOUR_EMAIL@example.com&user_token=YOUR_TOKEN" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
