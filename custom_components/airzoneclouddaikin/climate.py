@@ -9,7 +9,8 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-HVACMode.AUTO = HVACMode("auto")  # Forced auto mode (renamed to HVACMode.AUTO)
+# Define a module-level constant for Auto mode.
+HVAC_MODE_AUTO = HVACMode("auto")
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the climate platform from a config entry."""
@@ -77,11 +78,11 @@ class AirzoneClimate(ClimateEntity):
         """Return the list of supported HVAC modes.
         
         Standard modes are included, and if 'force_hvac_mode_auto' is enabled in the configuration,
-        HVACMode.AUTO is added.
+        HVAC_MODE_AUTO is added.
         """
         modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.FAN_ONLY, HVACMode.DRY]
         if self._config.get("force_hvac_mode_auto", False):
-            modes.append(HVACMode.AUTO)
+            modes.append(HVAC_MODE_AUTO)
         return modes
 
     @property
@@ -132,14 +133,14 @@ class AirzoneClimate(ClimateEntity):
          - HVACMode.HEAT -> P2=2
          - HVACMode.FAN_ONLY -> P2=3
          - HVACMode.DRY -> P2=5
-         - HVACMode.AUTO -> P2=4
+         - HVAC_MODE_AUTO -> P2=4
         """
         mode_mapping = {
             HVACMode.COOL: "1",
             HVACMode.HEAT: "2",
             HVACMode.FAN_ONLY: "3",
             HVACMode.DRY: "5",
-            HVACMode.AUTO: "4",
+            HVAC_MODE_AUTO: "4",
         }
         if hvac_mode in mode_mapping:
             self._send_command("P2", mode_mapping[hvac_mode])
@@ -153,12 +154,12 @@ class AirzoneClimate(ClimateEntity):
 
         Must be called after changing the mode.
         For HEAT or AUTO modes, use P8; for COOL mode use P7.
-        The value is constrained to the device limits and sent as an integer with ".0".
+        The value is constrained to the device limits and sent as an integer with '.0'.
         """
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
             temp = int(float(temp))
-            if self._hvac_mode in [HVACMode.HEAT, HVACMode.AUTO]:
+            if self._hvac_mode in [HVACMode.HEAT, HVAC_MODE_AUTO]:
                 min_temp = int(float(self._device_data.get("min_limit_heat", 16)))
                 max_temp = int(float(self._device_data.get("max_limit_heat", 32)))
                 command = "P8"
@@ -189,7 +190,7 @@ class AirzoneClimate(ClimateEntity):
             return
         if self._hvac_mode in [HVACMode.COOL] or self._hvac_mode == "ventilate":
             self._send_command("P3", speed)
-        elif self._hvac_mode in [HVACMode.HEAT, HVACMode.AUTO]:
+        elif self._hvac_mode in [HVACMode.HEAT, HVAC_MODE_AUTO]:
             self._send_command("P4", speed)
         self.schedule_update_ha_state()
 
