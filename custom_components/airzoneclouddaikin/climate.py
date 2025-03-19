@@ -76,12 +76,12 @@ class AirzoneClimate(ClimateEntity):
     def hvac_modes(self):
         """Return the list of supported HVAC modes.
         
-        Standard modes are included, and if 'force_hvac_mode_auto' is enabled in the configuration,
-        HVAC_MODE_AUTO is added.
+        Standard modes are included, and if 'HVACMode.AUTO' is enabled in the configuration,
+        HVACMode.AUTO is added.
         """
         modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.FAN_ONLY, HVACMode.DRY]
-        if self._config.get("force_hvac_mode_auto", False):
-            modes.append(HVAC_MODE_AUTO)
+        if self._config.get("HVACMode.AUTO", False):
+            modes.append(HVACMode.AUTO)
         return modes
 
     @property
@@ -158,7 +158,7 @@ class AirzoneClimate(ClimateEntity):
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
             temp = int(float(temp))
-            if self._hvac_mode in [HVACMode.HEAT, HVAC_MODE_AUTO]:
+            if self._hvac_mode in [HVACMode.HEAT, HVACMode.AUTO]:
                 min_temp = int(float(self._device_data.get("min_limit_heat", 16)))
                 max_temp = int(float(self._device_data.get("max_limit_heat", 32)))
                 command = "P8"
