@@ -16,6 +16,7 @@ curl -v "https://dkn.airzonecloud.com/installation_relations/?format=json&user_e
    Según el paquete original de max13fr:
    
    MODES_CONVERTER = {
+
        "1": {"name": "cool", "type": "cold", "description": "Cooling mode"},
        "2": {"name": "heat", "type": "heat", "description": "Heating mode"},
        "3": {"name": "ventilate", "type": "cold", "description": "Ventilation in cold mode"},
@@ -30,11 +31,11 @@ curl -v "https://dkn.airzonecloud.com/installation_relations/?format=json&user_e
    - P1: Encendido/Apagado.
    - P2: "1" → cool, "2" → heat, "3" → ventilate, "4" → Auto mode (forzado si se activa en configuración), "5" → dehumidify.
    - P3: Velocidad del ventilador en modo frío y ventilación (1, 2, 3).
-   - P4: Velocidad del ventilador en modo calor y auto (1, 2, 3).
+   - P4: Velocidad del ventilador en modo calor y auto (1, 2, 3). ***modo auto en pruebas***
    - P7: Ajuste de consigna para frío (enviar valores con decimales, por ejemplo, "25.0").
-   - P8: Ajuste de consigna para calor (enviar valores con decimales, por ejemplo, "23.0").
+   - P8: Ajuste de consigna para calor (enviar valores con decimales, por ejemplo, "23.0"). ***Tambié``n función par el modo auto, en pruebas***
 
-5. Ejemplos de Comandos Curl para Eventos  
+6. Ejemplos de Comandos Curl para Eventos  
    (Reemplaza YOUR_EMAIL@example.com, YOUR_TOKEN, YOUR_DEVICE_ID y YOUR_INSTALLATION_ID por tus datos)
    
    - Encender el dispositivo (P1=1):  
