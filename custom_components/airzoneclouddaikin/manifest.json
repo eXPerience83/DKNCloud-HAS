@@ -6,6 +6,6 @@
   "dependencies": [],
   "after_dependencies": ["http"],
   "codeowners": ["@max13fr", "@fitamix", "eXPerience83"],
-  "version": "0.1.5",
+  "version": "0.2.0",
   "config_flow": true
 }
