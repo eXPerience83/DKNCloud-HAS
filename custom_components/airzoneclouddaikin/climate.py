@@ -1,5 +1,4 @@
 """Climate platform for DKN Cloud for HASS using the Airzone Cloud API."""
-import asyncio
 import logging
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode
@@ -205,6 +204,7 @@ class AirzoneClimate(ClimateEntity):
             }
         }
         _LOGGER.info("Sending command: %s", payload)
-        # Use run_coroutine_threadsafe to schedule the coroutine in the main loop
-        import asyncio
-        asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self.hass.loop)
+        if self.hass is not None:
+            self.hass.async_create_task(self._api.send_event(payload))
+        else:
+            _LOGGER.error("hass is not available; cannot send command.")
