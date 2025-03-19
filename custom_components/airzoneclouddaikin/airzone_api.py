@@ -4,7 +4,7 @@ This module implements:
 - Authentication via the /users/sign_in endpoint.
 - Fetching installations via the /installation_relations endpoint.
 - Fetching devices for a given installation via the /devices endpoint.
-
+- Sending events via the /events endpoint.
 Endpoints are imported from const.py.
 """
 
@@ -106,3 +106,17 @@ class AirzoneAPI:
         except Exception as err:
             _LOGGER.error("Exception fetching devices: %s", err)
             return []
+
+    async def send_event(self, payload: dict) -> dict:
+        """Send an event to the API via the /events endpoint."""
+        url = f"{BASE_URL}{API_EVENTS}"
+        params = {"format": "json", "user_email": self._username, "user_token": self.token}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/json;charset=UTF-8",
+            "Accept": "application/json, text/plain, */*"
+        }
+        async with self._session.post(url, json=payload, params=params, headers=headers) as response:
+            response.raise_for_status()
+            return await response.json()
