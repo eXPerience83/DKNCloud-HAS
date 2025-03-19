@@ -1,27 +1,25 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-# Changelog
 
-## 0.2.3 - 2025-03-19
-### 🔹 Correcciones y mejoras en la compatibilidad con Home Assistant 2025.3+
-- **Corrección de imports en `climate.py` y `sensor.py`.**
-  - Se han actualizado las constantes `HVAC_MODE_*` a `HVACMode.*` y `SUPPORT_TARGET_TEMPERATURE` a `ClimateEntityFeature.TARGET_TEMPERATURE`.
-  - Se ha cambiado `TEMP_CELSIUS` por `UnitOfTemperature.CELSIUS`.
-- **Actualización de `__init__.py`.**
-  - Se reemplaza `async_forward_entry_setup` por `async_forward_entry_setups`, evitando warnings y mejorando la compatibilidad con Home Assistant 2025.6+.
-- **Corrección en la carga de dispositivos.**
-  - Se ha corregido un error en la inicialización de los dispositivos que impedía que las entidades aparecieran en Home Assistant.
-- **Validación de temperatura.**
-  - Ahora la temperatura enviada a la API siempre es un número entero con `.0`, asegurando compatibilidad con la API.
+## [0.2.3] - 2025-03-19
+### Added
+- Updated version to 0.2.3.
+- Fixed unique_id for climate and sensor entities so they are properly registered and managed in the Home Assistant UI.
+- Added asynchronous method `send_event` to the AirzoneAPI class in airzone_api.py.
+- Updated config_flow.py to include the "force_hvac_mode_auto" option.
+- Updated set_temperature in climate.py to constrain values based on device limits (min_limit_cold/max_limit_cold for cool modes; min_limit_heat/max_limit_heat for heat modes) and format the value as an integer with ".0".
+- Updated info.md to include the original MODES_CONVERTER mapping from max13fr and detailed curl command examples (using generic placeholders).
 
 ### Changed
-- Minor adjustments in config_flow.py, climate.py, and README.md.
+- Replaced deprecated async_forward_entry_setup with async_forward_entry_setups in __init__.py.
+- Updated imports in climate.py and sensor.py to use HVACMode, ClimateEntityFeature, and UnitOfTemperature.
+- Renamed "heat-cold-auto" to HVAC_MODE_AUTO in the code.
+- Updated README.md with full integration details in English.
 
-**📌 Próximos pasos:**
-- Verificar si el modo "HVAC_MODE_AUTO" funciona correctamente en todas las máquinas.
-- Implementar soporte para más modos descubiertos por max13fr.
-- Mejorar la detección automática de velocidades de ventilador.
+### Pending
+- Further verification of fan speed control in different modes.
+- Additional testing of HVACMode.AUTO behavior on various machine models.
 
 ## [0.2.2] - 2025-03-19
 ### Added
@@ -29,15 +27,15 @@ All notable changes to this project will be documented in this file.
 - En el comando para obtener instalaciones se ahora incluye "user_email" y "user_token" en query parameters.
 - Se ha agregado soporte para controlar la velocidad del ventilador:
   - P3 para velocidad en modo frío (ventilate).
-  - P4 para velocidad en modo calor (HVAC_MODE_AUTO).
-- Se ha renombrado "heat-cold-auto" a HVAC_MODE_AUTO en todo el código.
+  - P4 para velocidad en modo calor (HVACMode.AUTO).
+- Se ha renombrado "heat-cold-auto" a HVACMode.AUTO en todo el código.
 - En set_temperature se limita el rango de temperaturas según "min_limit_cold"/"max_limit_cold" y "min_limit_heat"/"max_limit_heat" obtenidos de la API; el valor se convierte a entero y se formatea con ".0".
-- Se agregó la opción de configurar en el config flow (force_hvac_mode_auto) para habilitar el modo HVAC_MODE_AUTO.
+- Se agregó la opción de configurar en el config flow (force_hvac_mode_auto) para habilitar el modo HVACMode.AUTO.
 - Updated info.md to include the original MODES_CONVERTER mapping from max13fr, with a note that only modes 1–5 produced effect in our tests with model ADEQ125B2VEB.
 
 ### Changed
 - Minor adjustments in config_flow.py, climate.py, and README.md.
-- Pending: Verificar ajustes adicionales para la velocidad del ventilador en modos "fan" y "HVAC_MODE_AUTO".
+- Pending: Verificar ajustes adicionales para la velocidad del ventilador en modos "fan" y "HVACMode.AUTO".
 
 
 ## [0.2.1] - 2025-03-19
