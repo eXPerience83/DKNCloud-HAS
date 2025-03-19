@@ -10,9 +10,9 @@ This project is a fork of [fitamix/DaikinDKNCloud-HomeAssistant](https://github.
 
 This integration uses an API client (in `airzone_api.py`) to:
 - Authenticate via the `/users/sign_in` endpoint.
-- Retrieve installations via the `/installation_relations` endpoint.
+- Retrieve installations via the `/installation_relations` endpoint (using user_email and user_token in query parameters).
 - Retrieve devices for each installation via the `/devices` endpoint.
-- Control actions are implemented by sending events via the `/events` endpoint.
+- Send control events via the `/events` endpoint.
 
 Additionally, a sensor platform is included to record the temperature from the probe (`local_temp`), enabling historical data and automations.
 
@@ -24,13 +24,16 @@ Basic control methods have been implemented in `climate.py`:
   - "2" for heat,
   - "3" for ventilate,
   - "5" for dehumidify,
-  - "4" for heat-cold-auto (this mode can be forced if enabled in the configuration).
-- **set_temperature:** Sends an event with P8 (for heat or heat-cold-auto) or P7 (for cool) with temperature values (must include decimals, e.g., "23.0").
+  - HVAC_MODE_AUTO ("auto") for automatic mode (forced if enabled in the configuration).
+- **set_temperature:** Sends an event with P8 (for heat or HVAC_MODE_AUTO) or P7 (for cool) with temperature values (must be an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
+- **set_fan_speed:** (A new method to control fan speed) Uses P3 for cold mode (ventilate) and P4 for HVAC_MODE_AUTO mode.
 
-The API returns additional data (such as firmware, brand, available fan speeds, etc.) that can be used for device information and for creating extra sensors. For example, the integration extracts the field `availables_speeds` to limit the valid fan speed options (e.g., if the value is "3", valid speeds are 1, 2, and 3).
+The API returns additional data (firmware, brand, available fan speeds, temperature limits, etc.) that the integration uses:
+- The field `availables_speeds` defines the valid fan speed options.
+- The fields `min_limit_cold`, `max_limit_cold`, `min_limit_heat`, and `max_limit_heat` define the valid temperature ranges for cold and heat modes.
 
 > **Important:**  
-> Daikin climate equipment uses two consigns (one for heat and one for cold). Change the mode first (e.g., to heat) and then adjust the temperature. Although the original package defined modes up to "8", our tests indicate that only modes 1–5 produce an effect. Note that the API differentiates between fan speeds in cold and heat modes, and this integration uses the value from `availables_speeds` to dynamically set the valid range.
+> Daikin climate equipment uses two consigns (one for heat and one for cold). Change the mode first (e.g., to heat) and then adjust the temperature. Although the original package defined modes up to "8", our tests indicate that only modes 1–5 produce an effect. Note that the API differentiates between fan speeds in cold and heat modes.
 
 ## Installation
 
@@ -57,15 +60,15 @@ After installation, add the integration via the Home Assistant UI by going to **
 The configuration will ask for:
 - **Username and Password:** Your Airzone Cloud account credentials.
 - **Scan Interval:** Time in seconds between updates.
-- **Force Heat‑Cold‑Auto:** (Optional checkbox) If enabled, the mode "heat-cold-auto" will be available for selection. Use this mode under your own responsibility.
+- **Force HVAC Mode Auto:** (Optional checkbox) If enabled, the mode "auto" (HVAC_MODE_AUTO) will be available for selection. Use this mode under your own responsibility.
 
 ## Usage
 
 The integration retrieves your installations and devices, and creates:
-- A **climate entity** for each device (allowing control of power, mode, target temperature, and fan speed).
+- A **climate entity** for each device (allowing control of power, HVAC mode, target temperature, and fan speed).
 - A **sensor entity** for the temperature probe (`local_temp`), which Home Assistant will record historically.
 
-You can control each device (turn on/off, change mode, adjust temperature, and adjust fan speed) from the Home Assistant UI. When you interact with the entity, the integration sends the corresponding events (P1, P2, P7, P8) to the API.
+You can control each device from the Home Assistant UI. When you interact with the entity, the integration sends the corresponding events (P1, P2, P7, P8, and fan speed commands P3/P4) to the API.
 
 ## API Examples
 
