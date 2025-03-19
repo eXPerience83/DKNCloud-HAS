@@ -1,6 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+# Changelog
+
+## 0.2.3 - 2025-03-19
+### 🔹 Correcciones y mejoras en la compatibilidad con Home Assistant 2025.3+
+- **Corrección de imports en `climate.py` y `sensor.py`.**
+  - Se han actualizado las constantes `HVAC_MODE_*` a `HVACMode.*` y `SUPPORT_TARGET_TEMPERATURE` a `ClimateEntityFeature.TARGET_TEMPERATURE`.
+  - Se ha cambiado `TEMP_CELSIUS` por `UnitOfTemperature.CELSIUS`.
+- **Actualización de `__init__.py`.**
+  - Se reemplaza `async_forward_entry_setup` por `async_forward_entry_setups`, evitando warnings y mejorando la compatibilidad con Home Assistant 2025.6+.
+- **Corrección en la carga de dispositivos.**
+  - Se ha corregido un error en la inicialización de los dispositivos que impedía que las entidades aparecieran en Home Assistant.
+- **Validación de temperatura.**
+  - Ahora la temperatura enviada a la API siempre es un número entero con `.0`, asegurando compatibilidad con la API.
+
+**📌 Próximos pasos:**
+- Verificar si el modo "HVAC_MODE_AUTO" funciona correctamente en todas las máquinas.
+- Implementar soporte para más modos descubiertos por max13fr.
+- Mejorar la detección automática de velocidades de ventilador.
 
 ## [0.2.2] - 2025-03-19
 ### Added
