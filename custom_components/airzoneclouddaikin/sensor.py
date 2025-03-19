@@ -63,13 +63,23 @@ class AirzoneTemperatureSensor(SensorEntity):
         """Return the unit of measurement."""
         return self._unit_of_measurement
 
+    @property
+    def device_class(self):
+        """Return the device class."""
+        return "temperature"
+
+    @property
+    def state_class(self):
+        """Return the state class."""
+        return "measurement"
+
+    async def async_update(self):
+        """Update the sensor state."""
+        self.update_state()
+
     def update_state(self):
         """Update the state from device data."""
         try:
             self._state = float(self._device_data.get("local_temp"))
         except (ValueError, TypeError):
             self._state = None
-
-    def update(self):
-        """Update the sensor state."""
-        self.update_state()
