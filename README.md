@@ -23,15 +23,15 @@ Basic control methods have been implemented in `climate.py`:
   - "1" for cool,
   - "2" for heat,
   - "3" for ventilate,
-  - "4" for auto mode (forced if enabled in the configuration).
-  - "5" for dehumidify,
-
-- **set_temperature:** Sends an event with P8 (for heat, and ¿auto mode?) or P7 (for cool) with temperature values (must be an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
-- **set_fan_speed:** (A new method to control fan speed) Uses P3 for cold mode (and ventilate) and P4 for heat mode (and auto mode).
+  - "4" for auto mode (HVAC_MODE_AUTO, forced if enabled in the configuration),
+  - "5" for dehumidify.
+- **set_temperature:** Sends an event with P8 (for heat or HVAC_MODE_AUTO) or P7 (for cool) with temperature values (must be an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
+- **set_fan_speed:** Uses P3 to adjust the fan speed in cold/ventilate modes and P4 in heat/auto modes.
 
 The API returns additional data (firmware, brand, available fan speeds, temperature limits, etc.) that the integration uses:
 - The field `availables_speeds` defines the valid fan speed options.
 - The fields `min_limit_cold`, `max_limit_cold`, `min_limit_heat`, and `max_limit_heat` define the valid temperature ranges for cold and heat modes.
+- Temperatures are always sent as integer values with a ".0" appended (e.g., 23 → "23.0").
 
 > **Important:**  
 > Daikin climate equipment uses two consigns (one for heat and one for cold). Change the mode first (e.g., to heat) and then adjust the temperature. Although the original package defined modes up to "8", our tests indicate that only modes 1–5 produce an effect. Note that the API differentiates between fan speeds in cold and heat modes.
@@ -69,7 +69,7 @@ The integration retrieves your installations and devices, and creates:
 - A **climate entity** for each device (allowing control of power, HVAC mode, target temperature, and fan speed).
 - A **sensor entity** for the temperature probe (`local_temp`), which Home Assistant will record historically.
 
-You can control each device from the Home Assistant UI. When you interact with the entity, the integration sends the corresponding events (P1, P2, P7, P8, and fan speed commands P3/P4) to the API.
+When you interact with the entity, the integration sends the corresponding events (P1, P2, P7, P8, and fan speed commands P3/P4) to the API.
 
 ## API Examples
 
@@ -78,3 +78,5 @@ For further testing, refer to the file `info.md` for detailed information and ex
 ## License
 
 This project is licensed under the MIT License.
+
+Additional note: Temperatures are adjusted to the limits provided by the device (for cold: min_limit_cold and max_limit_cold; for heat: min_limit_heat and max_limit_heat). Fan speed commands use P3 for cold and P4 for heat/auto. If you use the forced auto mode, be aware that the behavior of temperature and fan speed may vary.
