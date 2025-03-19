@@ -1,4 +1,5 @@
 """Climate platform for DKN Cloud for HASS using the Airzone Cloud API."""
+import asyncio
 import logging
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode
@@ -44,7 +45,7 @@ class AirzoneClimate(ClimateEntity):
 
     def __init__(self, api: AirzoneAPI, device_data: dict, config: dict):
         """Initialize the climate entity.
-        
+
         :param api: The AirzoneAPI instance.
         :param device_data: Dictionary with device information.
         :param config: Integration configuration.
@@ -75,7 +76,7 @@ class AirzoneClimate(ClimateEntity):
     @property
     def hvac_modes(self):
         """Return the list of supported HVAC modes.
-        
+
         Standard modes are included, and if 'force_hvac_mode_auto' is enabled in the configuration,
         HVAC_MODE_AUTO is added.
         """
@@ -102,7 +103,7 @@ class AirzoneClimate(ClimateEntity):
     @property
     def fan_speed_range(self):
         """Return a list of valid fan speeds based on 'availables_speeds' from device data.
-        
+
         The API returns 'availables_speeds' as a string (e.g., "3" or "4"). Default is 3.
         """
         speeds_str = self._device_data.get("availables_speeds", "3")
@@ -126,7 +127,7 @@ class AirzoneClimate(ClimateEntity):
 
     def set_hvac_mode(self, hvac_mode):
         """Set the HVAC mode.
-        
+
         Mapping:
          - HVACMode.COOL -> P2=1
          - HVACMode.HEAT -> P2=2
@@ -205,6 +206,7 @@ class AirzoneClimate(ClimateEntity):
         }
         _LOGGER.info("Sending command: %s", payload)
         if self.hass is not None:
-            self.hass.async_create_task(self._api.send_event(payload))
+            # Use run_coroutine_threadsafe to schedule the coroutine on the main loop
+            asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self.hass.loop)
         else:
             _LOGGER.error("hass is not available; cannot send command.")
