@@ -23,10 +23,11 @@ Basic control methods have been implemented in `climate.py`:
   - "1" for cool,
   - "2" for heat,
   - "3" for ventilate,
+  - "4" for automatic mode (forced if enabled in the configuration).
   - "5" for dehumidify,
-  - HVAC_MODE_AUTO ("auto") for automatic mode (forced if enabled in the configuration).
-- **set_temperature:** Sends an event with P8 (for heat or HVAC_MODE_AUTO) or P7 (for cool) with temperature values (must be an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
-- **set_fan_speed:** (A new method to control fan speed) Uses P3 for cold mode (ventilate) and P4 for HVAC_MODE_AUTO mode.
+
+- **set_temperature:** Sends an event with P8 (for heat) or P7 (for cool) with temperature values (must be an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
+- **set_fan_speed:** (A new method to control fan speed) Uses P3 for cold mode (and ventilate) and P4 for heat mode (and automatic mode).
 
 The API returns additional data (firmware, brand, available fan speeds, temperature limits, etc.) that the integration uses:
 - The field `availables_speeds` defines the valid fan speed options.
