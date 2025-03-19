@@ -1,187 +1,141 @@
-"""Climate platform for DKN Cloud for HASS using the official Airzone Cloud API."""
+"""Climate platform for DKN Cloud for HASS using the Airzone Cloud API."""
 import logging
-from datetime import timedelta
-from typing import Optional, List, Any, Dict
-
 from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import HVACMode, ClimateEntityFeature
-from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
-from .const import DOMAIN, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.components.climate.const import (
+    HVAC_MODE_OFF, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_FAN_ONLY, HVAC_MODE_DRY, SUPPORT_TARGET_TEMPERATURE
+)
+from homeassistant.const import TEMP_CELSIUS, ATTR_TEMPERATURE
+from .const import DOMAIN
 from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(seconds=10)
+class AirzoneClimate(ClimateEntity):
+    """Representation of an Airzone Cloud Daikin climate device."""
 
-AIRZONECLOUD_DEVICE_HVAC_MODES = [
-    HVACMode.OFF,
-    HVACMode.HEAT,
-    HVACMode.COOL,
-    HVACMode.DRY,
-    HVACMode.FAN_ONLY,
-]
-
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
-):
-    """Set up the climate platform from a config entry using our AirzoneAPI client."""
-    config: Dict[str, Any] = entry.data
-    username = config.get(CONF_USERNAME)
-    password = config.get(CONF_PASSWORD)
-
-    if not username or not password:
-        _LOGGER.error("Missing username or password in config entry.")
-        return
-
-    session = async_get_clientsession(hass)
-    api = AirzoneAPI(username, password, session)
-
-    # Authenticate with the API
-    if not await api.login():
-        _LOGGER.error("Login to Airzone API failed.")
-        return
-
-    installations_relations = await api.fetch_installations()
-    _LOGGER.debug("Found %d installation relations", len(installations_relations))
-    if not installations_relations:
-        _LOGGER.warning("No installations found. Verify your credentials or API availability.")
-
-    entities = []
-    # For each installation relation, extract the installation and then fetch its devices.
-    for relation in installations_relations:
-        installation = relation.get("installation")
-        if not installation:
-            continue
-        installation_id = installation.get("id")
-        if not installation_id:
-            continue
-        devices: List[Dict] = await api.fetch_devices(installation_id)
-        _LOGGER.debug("Installation '%s' has %d devices", installation.get("name", "Unknown"), len(devices))
-        for device in devices:
-            entities.append(AirzonecloudDaikinDevice(device, installation))
-
-    if not entities:
-        _LOGGER.warning("No devices found in the API response.")
-    async_add_entities(entities, True)
-
-class AirzonecloudDaikinDevice(ClimateEntity):
-    """Representation of an Airzone Cloud Daikin device."""
-
-    def __init__(self, device_data: Dict, installation: Dict):
+    def __init__(self, api: AirzoneAPI, device_data: dict):
         """Initialize the climate entity.
         
+        :param api: The AirzoneAPI instance.
         :param device_data: Dictionary with device information.
-        :param installation: Dictionary with installation information.
         """
-        self._device = device_data
-        self._installation = installation
-        _LOGGER.info("Initializing device %s (%s)", self.name, self.unique_id)
+        self._api = api
+        self._device_data = device_data
+        self._name = device_data.get("name", "Airzone Device")
+        self._device_id = device_data.get("id")
+        self._hvac_mode = HVAC_MODE_OFF
+        self._target_temperature = None
 
     @property
-    def unique_id(self) -> Optional[str]:
-        """Return a unique ID for the device."""
-        return f"device_{self._device.get('id', 'unknown')}"
+    def name(self):
+        """Return the name of the climate entity."""
+        return self._name
 
     @property
-    def name(self) -> str:
-        """Return the name of the device, combining installation and device names."""
-        inst_name = self._installation.get("name", "Unknown Installation")
-        dev_name = self._device.get("name", "Unknown Device")
-        return f"{inst_name} - {dev_name}"
+    def temperature_unit(self):
+        """Return the unit of measurement."""
+        return TEMP_CELSIUS
 
     @property
-    def temperature_unit(self) -> str:
-        """Return the temperature unit (Celsius)."""
-        return UnitOfTemperature.CELSIUS
-
-    @property
-    def hvac_mode(self) -> str:
-        """Return the current HVAC mode of the device."""
-        mode = self._device.get("mode", "")
-        is_on = self._device.get("is_on", False)
-        if is_on:
-            if mode in ["cool", "cool-air"]:
-                return HVACMode.COOL
-            if mode in ["heat", "heat-air"]:
-                return HVACMode.HEAT
-            if mode == "ventilate":
-                return HVACMode.FAN_ONLY
-            if mode == "dehumidify":
-                return HVACMode.DRY
-        return HVACMode.OFF
-
-    @property
-    def hvac_modes(self) -> List[str]:
-        """Return the list of available HVAC modes."""
-        return AIRZONECLOUD_DEVICE_HVAC_MODES
-
-    @property
-    def current_temperature(self) -> Optional[float]:
-        """Return the current temperature reported by the device."""
-        return self._device.get("current_temperature")
-
-    @property
-    def target_temperature(self) -> Optional[float]:
-        """Return the target temperature."""
-        return self._device.get("target_temperature")
-
-    def set_temperature(self, **kwargs) -> None:
-        """Set a new target temperature.
+    def hvac_modes(self):
+        """Return the list of supported HVAC modes.
         
-        Here you should implement the API call to change the device's temperature.
+        Se añaden los modos estándar y se incluye 'heat-cold-auto' (P2=4) como opción forzada bajo responsabilidad del usuario.
         """
-        temperature = kwargs.get(ATTR_TEMPERATURE)
-        if temperature is not None:
-            _LOGGER.debug("Setting temperature to %s", temperature)
-            # TODO: Implement the API call here.
-            pass
+        return [HVAC_MODE_OFF, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_FAN_ONLY, HVAC_MODE_DRY, "heat-cold-auto"]
 
-    def set_hvac_mode(self, hvac_mode: str) -> None:
-        """Set a new HVAC mode.
+    @property
+    def hvac_mode(self):
+        """Return the current HVAC mode."""
+        return self._hvac_mode
+
+    @property
+    def target_temperature(self):
+        """Return the current target temperature."""
+        return self._target_temperature
+
+    @property
+    def supported_features(self):
+        """Return the supported features."""
+        return SUPPORT_TARGET_TEMPERATURE
+
+    @property
+    def fan_speed_range(self):
+        """Return a list of valid fan speeds based on the available speeds from device data.
         
-        Here you should implement the API call to change the device's mode.
+        The API returns 'availables_speeds' as a string (e.g., "3" or "4").
+        If not present, default to 3.
         """
-        _LOGGER.debug("Setting HVAC mode to %s", hvac_mode)
-        if hvac_mode == HVACMode.OFF:
-            self.turn_off()
+        speeds_str = self._device_data.get("availables_speeds", "3")
+        try:
+            speeds = int(speeds_str)
+        except ValueError:
+            speeds = 3
+        return list(range(1, speeds + 1))
+
+    def turn_on(self):
+        """Turn on the device by sending P1=1."""
+        self._send_command("P1", 1)
+        # Se asume que al encender se activa un modo por defecto, por ejemplo, heat.
+        self._hvac_mode = HVAC_MODE_HEAT
+        self.schedule_update_ha_state()
+
+    def turn_off(self):
+        """Turn off the device by sending P1=0."""
+        self._send_command("P1", 0)
+        self._hvac_mode = HVAC_MODE_OFF
+        self.schedule_update_ha_state()
+
+    def set_hvac_mode(self, hvac_mode):
+        """Set the HVAC mode.
+        
+        Mapea los siguientes modos:
+         - HVAC_MODE_HEAT -> P2=2
+         - HVAC_MODE_COOL -> P2=1
+         - HVAC_MODE_FAN_ONLY -> P2=3
+         - HVAC_MODE_DRY -> P2=5
+         - "heat-cold-auto" -> P2=4 (modo automático forzado bajo responsabilidad del usuario)
+        """
+        mode_mapping = {
+            HVAC_MODE_HEAT: "2",
+            HVAC_MODE_COOL: "1",
+            HVAC_MODE_FAN_ONLY: "3",
+            HVAC_MODE_DRY: "5",
+            "heat-cold-auto": "4",
+        }
+        if hvac_mode in mode_mapping:
+            self._send_command("P2", mode_mapping[hvac_mode])
+            self._hvac_mode = hvac_mode
+            self.schedule_update_ha_state()
         else:
-            if not self._device.get("is_on", False):
-                self.turn_on()
-            mode_map = {
-                HVACMode.HEAT: "heat",
-                HVACMode.COOL: "cool",
-                HVACMode.DRY: "dehumidify",
-                HVACMode.FAN_ONLY: "ventilate",
+            _LOGGER.error("Unsupported HVAC mode: %s", hvac_mode)
+
+    def set_temperature(self, **kwargs):
+        """Set the target temperature.
+
+        Debe llamarse después de haber cambiado el modo.
+        Para modo heat (o heat-cold-auto) se usa P8; para modo cool se usa P7.
+        El valor debe enviarse con decimales (por ejemplo, "23.0").
+        """
+        temp = kwargs.get(ATTR_TEMPERATURE)
+        if temp is not None:
+            temp = float(temp)
+            if self._hvac_mode in [HVAC_MODE_HEAT, "heat-cold-auto"]:
+                self._send_command("P8", f"{temp:.1f}")
+            else:
+                self._send_command("P7", f"{temp:.1f}")
+            self._target_temperature = temp
+            self.schedule_update_ha_state()
+
+    def _send_command(self, option, value):
+        """Send a command to the device using the events endpoint."""
+        payload = {
+            "event": {
+                "cgi": "modmaquina",
+                "device_id": self._device_id,
+                "option": option,
+                "value": value,
             }
-            if hvac_mode in mode_map:
-                _LOGGER.debug("Changing mode via API to %s", mode_map[hvac_mode])
-                # TODO: Implement the API call here.
-                pass
-
-    def turn_on(self) -> None:
-        """Turn on the device.
-        
-        Implement the API call to turn on the device.
-        """
-        _LOGGER.debug("Turning device on.")
-        # TODO: Implement the API call here.
-        pass
-
-    def turn_off(self) -> None:
-        """Turn off the device.
-        
-        Implement the API call to turn off the device.
-        """
-        _LOGGER.debug("Turning device off.")
-        # TODO: Implement the API call here.
-        pass
-
-    @property
-    def supported_features(self) -> int:
-        """Return the supported features (target temperature control)."""
-        return ClimateEntityFeature.TARGET_TEMPERATURE
+        }
+        _LOGGER.info("Sending command: %s", payload)
+        self._api._send_event(payload)
