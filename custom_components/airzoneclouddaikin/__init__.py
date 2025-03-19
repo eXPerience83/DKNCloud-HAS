@@ -11,9 +11,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up DKN Cloud for HASS from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
-    # Forward the setup to the climate platform.
+    # Forward the setup to the climate and sensor platforms.
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "climate")
+    )
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
     _LOGGER.info("DKN Cloud for HASS integration configured successfully.")
     return True
@@ -21,6 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_forward_entry_unload(entry, "climate")
+    unload_ok = unload_ok and await hass.config_entries.async_forward_entry_unload(entry, "sensor")
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
