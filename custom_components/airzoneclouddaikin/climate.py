@@ -10,17 +10,47 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up the climate platform from a config entry."""
+    config = entry.data
+    username = config.get("username")
+    password = config.get("password")
+    if not username or not password:
+        _LOGGER.error("Missing username or password")
+        return
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    session = async_get_clientsession(hass)
+    api = AirzoneAPI(username, password, session)
+    if not await api.login():
+        _LOGGER.error("Login to Airzone API failed.")
+        return
+    installations = await api.fetch_installations()
+    entities = []
+    for relation in installations:
+        installation = relation.get("installation")
+        if not installation:
+            continue
+        installation_id = installation.get("id")
+        if not installation_id:
+            continue
+        devices = await api.fetch_devices(installation_id)
+        for device in devices:
+            entities.append(AirzoneClimate(api, device, config))
+    async_add_entities(entities, True)
+
 class AirzoneClimate(ClimateEntity):
     """Representation of an Airzone Cloud Daikin climate device."""
 
-    def __init__(self, api: AirzoneAPI, device_data: dict):
+    def __init__(self, api: AirzoneAPI, device_data: dict, config: dict):
         """Initialize the climate entity.
         
         :param api: The AirzoneAPI instance.
         :param device_data: Dictionary with device information.
+        :param config: Integration configuration (contains, e.g., force_heat_cold_auto).
         """
         self._api = api
         self._device_data = device_data
+        self._config = config
         self._name = device_data.get("name", "Airzone Device")
         self._device_id = device_data.get("id")
         self._hvac_mode = HVAC_MODE_OFF
@@ -40,9 +70,13 @@ class AirzoneClimate(ClimateEntity):
     def hvac_modes(self):
         """Return the list of supported HVAC modes.
         
-        Se añaden los modos estándar y se incluye 'heat-cold-auto' (P2=4) como opción forzada bajo responsabilidad del usuario.
+        Se incluyen los modos estándar. Si el usuario ha activado 'force_heat_cold_auto'
+        en la configuración, se añade el modo "heat-cold-auto" (P2=4).
         """
-        return [HVAC_MODE_OFF, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_FAN_ONLY, HVAC_MODE_DRY, "heat-cold-auto"]
+        modes = [HVAC_MODE_OFF, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_FAN_ONLY, HVAC_MODE_DRY]
+        if self._config.get("force_heat_cold_auto", False):
+            modes.append("heat-cold-auto")
+        return modes
 
     @property
     def hvac_mode(self):
@@ -61,10 +95,9 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def fan_speed_range(self):
-        """Return a list of valid fan speeds based on the available speeds from device data.
+        """Return a list of valid fan speeds based on 'availables_speeds' from device data.
         
-        The API returns 'availables_speeds' as a string (e.g., "3" or "4").
-        If not present, default to 3.
+        The API returns 'availables_speeds' as a string (e.g., "3" or "4"). Default is 3.
         """
         speeds_str = self._device_data.get("availables_speeds", "3")
         try:
@@ -76,8 +109,7 @@ class AirzoneClimate(ClimateEntity):
     def turn_on(self):
         """Turn on the device by sending P1=1."""
         self._send_command("P1", 1)
-        # Se asume que al encender se activa un modo por defecto, por ejemplo, heat.
-        self._hvac_mode = HVAC_MODE_HEAT
+        self._hvac_mode = HVAC_MODE_HEAT  # Por defecto, se asume que se enciende en modo heat.
         self.schedule_update_ha_state()
 
     def turn_off(self):
@@ -94,7 +126,7 @@ class AirzoneClimate(ClimateEntity):
          - HVAC_MODE_COOL -> P2=1
          - HVAC_MODE_FAN_ONLY -> P2=3
          - HVAC_MODE_DRY -> P2=5
-         - "heat-cold-auto" -> P2=4 (modo automático forzado bajo responsabilidad del usuario)
+         - "heat-cold-auto" -> P2=4 (modo automático forzado, si se habilita en la configuración)
         """
         mode_mapping = {
             HVAC_MODE_HEAT: "2",
