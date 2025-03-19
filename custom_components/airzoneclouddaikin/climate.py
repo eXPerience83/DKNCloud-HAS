@@ -9,7 +9,7 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-HVAC_MODE_AUTO = HVACMode("auto")  # Nuevo modo renombrado
+HVAC_MODE_AUTO = HVACMode("auto")  # Modo automático forzado
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the climate platform from a config entry."""
@@ -56,6 +56,11 @@ class AirzoneClimate(ClimateEntity):
         self._device_id = device_data.get("id")
         self._hvac_mode = HVACMode.OFF
         self._target_temperature = None
+
+    @property
+    def unique_id(self):
+        """Return a unique ID for this climate entity."""
+        return self._device_id
 
     @property
     def name(self):
@@ -199,5 +204,4 @@ class AirzoneClimate(ClimateEntity):
             }
         }
         _LOGGER.info("Sending command: %s", payload)
-        # Dispara la tarea asíncrona para enviar el evento.
         asyncio.create_task(self._api.send_event(payload))
