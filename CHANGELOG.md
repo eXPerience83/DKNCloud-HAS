@@ -2,7 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.1] - 2025-03-18
+## [0.2.2] - 2025-03-19
+### Added
+- Updated version to 0.2.2.
+- En el comando para obtener instalaciones se ahora incluye "user_email" y "user_token" en query parameters.
+- Se ha agregado soporte para controlar la velocidad del ventilador:
+  - P3 para velocidad en modo frío (ventilate).
+  - P4 para velocidad en modo calor (HVAC_MODE_AUTO).
+- Se ha renombrado "heat-cold-auto" a HVAC_MODE_AUTO en todo el código.
+- En set_temperature se limita el rango de temperaturas según "min_limit_cold"/"max_limit_cold" y "min_limit_heat"/"max_limit_heat" obtenidos de la API; el valor se convierte a entero y se formatea con ".0".
+- Se agregó la opción de configurar en el config flow (force_hvac_mode_auto) para habilitar el modo HVAC_MODE_AUTO.
+- Updated info.md to include the original MODES_CONVERTER mapping from max13fr, with a note that only modes 1–5 produced effect in our tests with model ADEQ125B2VEB.
+
+### Changed
+- Minor adjustments in config_flow.py, climate.py, and README.md.
+- Pending: Verificar ajustes adicionales para la velocidad del ventilador en modos "fan" y "HVAC_MODE_AUTO".
+
+
+## [0.2.1] - 2025-03-19
 ### Added
 - Integration updated to version 0.2.1.
 - Added configuration option "force_heat_cold_auto" in config_flow (allows forcing the "heat-cold-auto" mode).
@@ -19,7 +36,7 @@ All notable changes to this project will be documented in this file.
 - Pending: Verificar el ajuste de velocidad del ventilador para modos "fan" y "heat-cold-auto".
 
 
-## [0.2.0] - 2025-03-18
+## [0.2.0] - 2025-03-19
 ### Added
 - Integration updated to version 0.2.0.
 - Updated API endpoints and BASE_URL in const.py.
