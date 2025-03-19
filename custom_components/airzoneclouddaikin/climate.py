@@ -9,7 +9,7 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-HVAC_MODE_AUTO = HVACMode("auto")  # Forced auto mode
+HVACMode.AUTO = HVACMode("auto")  # Forced auto mode
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the climate platform from a config entry."""
@@ -132,14 +132,14 @@ class AirzoneClimate(ClimateEntity):
          - HVACMode.HEAT -> P2=2
          - HVACMode.FAN_ONLY -> P2=3
          - HVACMode.DRY -> P2=5
-         - HVAC_MODE_AUTO -> P2=4
+         - HVACMode.AUTO -> P2=4
         """
         mode_mapping = {
             HVACMode.COOL: "1",
             HVACMode.HEAT: "2",
             HVACMode.FAN_ONLY: "3",
             HVACMode.DRY: "5",
-            HVAC_MODE_AUTO: "4",
+            HVACMode.AUTO: "4",
         }
         if hvac_mode in mode_mapping:
             self._send_command("P2", mode_mapping[hvac_mode])
@@ -152,7 +152,7 @@ class AirzoneClimate(ClimateEntity):
         """Set the target temperature.
 
         Must be called after changing the mode.
-        For heat modes (HEAT or HVAC_MODE_AUTO) use P8; for cool mode use P7.
+        For heat modes (HEAT or HVACMode.AUTO) use P8; for cool mode use P7.
         The value is limited to the range provided by the API and sent as an integer with '.0'.
         """
         temp = kwargs.get(ATTR_TEMPERATURE)
@@ -189,7 +189,7 @@ class AirzoneClimate(ClimateEntity):
             return
         if self._hvac_mode in [HVACMode.COOL] or self._hvac_mode == "ventilate":
             self._send_command("P3", speed)
-        elif self._hvac_mode in [HVACMode.HEAT, HVAC_MODE_AUTO]:
+        elif self._hvac_mode in [HVACMode.HEAT, HVACMode.AUTO]:
             self._send_command("P4", speed)
         self.schedule_update_ha_state()
 
