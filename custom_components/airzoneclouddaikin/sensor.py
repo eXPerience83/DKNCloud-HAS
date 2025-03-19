@@ -5,6 +5,35 @@ from homeassistant.const import UnitOfTemperature
 
 _LOGGER = logging.getLogger(__name__)
 
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up the sensor platform from a config entry."""
+    config = entry.data
+    username = config.get("username")
+    password = config.get("password")
+    if not username or not password:
+        _LOGGER.error("Missing username or password")
+        return
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    from .airzone_api import AirzoneAPI
+    session = async_get_clientsession(hass)
+    api = AirzoneAPI(username, password, session)
+    if not await api.login():
+        _LOGGER.error("Login to Airzone API failed.")
+        return
+    installations = await api.fetch_installations()
+    entities = []
+    for relation in installations:
+        installation = relation.get("installation")
+        if not installation:
+            continue
+        installation_id = installation.get("id")
+        if not installation_id:
+            continue
+        devices = await api.fetch_devices(installation_id)
+        for device in devices:
+            entities.append(AirzoneTemperatureSensor(device))
+    async_add_entities(entities, True)
+
 class AirzoneTemperatureSensor(SensorEntity):
     """Representation of a temperature sensor for an Airzone device (local_temp)."""
 
