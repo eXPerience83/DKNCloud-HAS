@@ -37,7 +37,7 @@ Detailed Information on "Px" Modes and Example Curl Commands
    - P8: Temperature setting for heat (e.g., "23.0").
 
 5. Example Curl Commands for Events  
-   (Replace YOUR_EMAIL@example.com, YOUR_TOKEN, YOUR_DEVICE_ID, and YOUR_INSTALLATION_ID with your own data or generic placeholders)
+   (Replace YOUR_EMAIL@example.com, YOUR_TOKEN, YOUR_DEVICE_ID, and YOUR_INSTALLATION_ID with generic placeholders)
 
    - Power On (P1=1):  
      curl -v "https://dkn.airzonecloud.com/events/?user_email=YOUR_EMAIL@example.com&user_token=YOUR_TOKEN" -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json;charset=UTF-8" -H "Accept: application/json, text/plain, */*" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -d "{\"event\": {\"cgi\": \"modmaquina\", \"device_id\": \"YOUR_DEVICE_ID\", \"option\": \"P1\", \"value\": 1}}"
@@ -56,6 +56,7 @@ Detailed Information on "Px" Modes and Example Curl Commands
 
    - Set Temperature to 25°C in cold mode (P7):  
      curl -v "https://dkn.airzonecloud.com/events/?user_email=YOUR_EMAIL@example.com&user_token=YOUR_TOKEN" -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json;charset=UTF-8" -H "Accept: application/json, text/plain, */*" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -d "{\"event\": {\"cgi\": \"modmaquina\", \"device_id\": \"YOUR_DEVICE_ID\", \"option\": \"P7\", \"value\": \"25.0\"}}"
+
 -------------------------------------------------------
 
 Device Raw Data Example:
