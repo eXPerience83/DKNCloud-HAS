@@ -10,6 +10,8 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
+HVAC_MODE_AUTO = "auto"  # Renombrado de "heat-cold-auto"
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the climate platform from a config entry."""
     config = entry.data
@@ -46,7 +48,7 @@ class AirzoneClimate(ClimateEntity):
         
         :param api: The AirzoneAPI instance.
         :param device_data: Dictionary with device information.
-        :param config: Integration configuration (contains, e.g., force_heat_cold_auto).
+        :param config: Integration configuration (contains, e.g., force_hvac_mode_auto).
         """
         self._api = api
         self._device_data = device_data
@@ -70,12 +72,12 @@ class AirzoneClimate(ClimateEntity):
     def hvac_modes(self):
         """Return the list of supported HVAC modes.
         
-        Se incluyen los modos estándar. Si el usuario ha activado 'force_heat_cold_auto'
-        en la configuración, se añade el modo "heat-cold-auto" (P2=4).
+        Se incluyen los modos estándar y, si se ha habilitado 'force_hvac_mode_auto'
+        en la configuración, se añade HVAC_MODE_AUTO.
         """
         modes = [HVAC_MODE_OFF, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_FAN_ONLY, HVAC_MODE_DRY]
-        if self._config.get("force_heat_cold_auto", False):
-            modes.append("heat-cold-auto")
+        if self._config.get("force_hvac_mode_auto", False):
+            modes.append(HVAC_MODE_AUTO)
         return modes
 
     @property
@@ -122,18 +124,18 @@ class AirzoneClimate(ClimateEntity):
         """Set the HVAC mode.
         
         Mapea los siguientes modos:
-         - HVAC_MODE_HEAT -> P2=2
          - HVAC_MODE_COOL -> P2=1
+         - HVAC_MODE_HEAT -> P2=2
          - HVAC_MODE_FAN_ONLY -> P2=3
          - HVAC_MODE_DRY -> P2=5
-         - "heat-cold-auto" -> P2=4 (modo automático forzado, si se habilita en la configuración)
+         - HVAC_MODE_AUTO -> P2=4 (modo automático forzado, si se habilita en la configuración)
         """
         mode_mapping = {
-            HVAC_MODE_HEAT: "2",
             HVAC_MODE_COOL: "1",
+            HVAC_MODE_HEAT: "2",
             HVAC_MODE_FAN_ONLY: "3",
             HVAC_MODE_DRY: "5",
-            "heat-cold-auto": "4",
+            HVAC_MODE_AUTO: "4",
         }
         if hvac_mode in mode_mapping:
             self._send_command("P2", mode_mapping[hvac_mode])
@@ -146,18 +148,47 @@ class AirzoneClimate(ClimateEntity):
         """Set the target temperature.
 
         Debe llamarse después de haber cambiado el modo.
-        Para modo heat (o heat-cold-auto) se usa P8; para modo cool se usa P7.
-        El valor debe enviarse con decimales (por ejemplo, "23.0").
+        Para modo heat (o HVAC_MODE_AUTO) se usa P8; para modo cool se usa P7.
+        Se usan los rangos de temperatura proporcionados por la API y se fuerza un valor entero formateado con ".0".
         """
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
-            temp = float(temp)
-            if self._hvac_mode in [HVAC_MODE_HEAT, "heat-cold-auto"]:
-                self._send_command("P8", f"{temp:.1f}")
+            temp = int(float(temp))  # Se convierte a entero
+            # Seleccionamos límites según el modo
+            if self._hvac_mode in [HVAC_MODE_HEAT, HVAC_MODE_AUTO]:
+                min_temp = int(float(self._device_data.get("min_limit_heat", 16)))
+                max_temp = int(float(self._device_data.get("max_limit_heat", 32)))
+                command = "P8"
             else:
-                self._send_command("P7", f"{temp:.1f}")
+                min_temp = int(float(self._device_data.get("min_limit_cold", 16)))
+                max_temp = int(float(self._device_data.get("max_limit_cold", 32)))
+                command = "P7"
+            if temp < min_temp:
+                temp = min_temp
+            elif temp > max_temp:
+                temp = max_temp
+            self._send_command(command, f"{temp}.0")
             self._target_temperature = temp
             self.schedule_update_ha_state()
+
+    def set_fan_speed(self, speed):
+        """Set the fan speed.
+        
+        Usa P3 para modos de ventilación en frío y P4 para modos de calor (HVAC_MODE_AUTO).
+        """
+        try:
+            speed = int(speed)
+        except ValueError:
+            _LOGGER.error("Invalid fan speed: %s", speed)
+            return
+        if speed not in self.fan_speed_range:
+            _LOGGER.error("Fan speed %s not in valid range %s", speed, self.fan_speed_range)
+            return
+        if self._hvac_mode in [HVAC_MODE_COOL] or self._hvac_mode == "ventilate":
+            self._send_command("P3", speed)
+        elif self._hvac_mode in [HVAC_MODE_HEAT, HVAC_MODE_AUTO]:
+            self._send_command("P4", speed)
+        self.schedule_update_ha_state()
 
     def _send_command(self, option, value):
         """Send a command to the device using the events endpoint."""
