@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2025-03-18
+### Added
+- Integration updated to version 0.2.1.
+- Added configuration option "force_heat_cold_auto" in config_flow (allows forcing the "heat-cold-auto" mode).
+- Updated async_setup_entry in climate.py to pass configuration to each climate entity.
+- In AirzoneClimate (climate.py), the property hvac_modes now includes "heat-cold-auto" if "force_heat_cold_auto" is enabled.
+- Added property fan_speed_range in climate.py to dynamically generate the list of valid fan speeds based on the API field "availables_speeds".
+- Added sensor platform (sensor.py) for recording the temperature probe (local_temp).
+- Updated info.md with detailed documentation on the original MODES_CONVERTER mapping from max13fr and noted that in our tests, only modes 1–5 produce an effect (for la máquina modelo ADEQ125B2VEB).
+- Updated README.md with clarifications on available features, including differences in fan speed settings for cold and heat modes.
+
+### Changed
+- Version updated in manifest.json to 0.2.1.
+- Minor adjustments in config_flow.py, __init__.py, and README.md.
+- Pending: Verificar el ajuste de velocidad del ventilador para modos "fan" y "heat-cold-auto".
+
+
 ## [0.2.0] - 2025-03-18
 ### Added
 - Integration updated to version 0.2.0.
