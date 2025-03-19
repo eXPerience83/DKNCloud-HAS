@@ -31,9 +31,9 @@ class AirzoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 scan_interval = int(user_input.get(CONF_SCAN_INTERVAL))
                 if scan_interval < 1:
-                    errors[CONF_SCAN_INTERVAL] = "scan_interval_no_valido"
+                    errors[CONF_SCAN_INTERVAL] = "scan_interval_invalid"
             except ValueError:
-                errors[CONF_SCAN_INTERVAL] = "scan_interval_no_valido"
+                errors[CONF_SCAN_INTERVAL] = "scan_interval_invalid"
 
             if not errors:
                 return self.async_create_entry(
