@@ -8,14 +8,15 @@ Detailed Information on "Px" Modes and Example Curl Commands
    Expected response: JSON containing "authentication_token".
 
 2. Get Installations  
-   (Include user_email and user_token as query parameters)  
+   Command:  
    curl -v "https://dkn.airzonecloud.com/installation_relations/?format=json&user_email=YOUR_EMAIL@example.com&user_token=YOUR_TOKEN" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
 3. Get Devices  
+   Command:  
    curl -v "https://dkn.airzonecloud.com/devices/?format=json&installation_id=YOUR_INSTALLATION_ID&user_email=YOUR_EMAIL@example.com&user_token=YOUR_TOKEN" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
 4. Mode Mapping (Px Options)  
-   According to the original package by max13fr:
+   Original mapping from max13fr:
 
    MODES_CONVERTER = {
        "1": {"name": "cool", "type": "cold", "description": "Cooling mode"},
@@ -28,7 +29,7 @@ Detailed Information on "Px" Modes and Example Curl Commands
        "8": {"name": "ventilate", "type": "heat", "description": "Ventilation in heating mode"}
    }
    
-   In our tests (with the ADEQ125B2VEB model), only the following produced an effect:
+   In our tests (with the ADEQ125B2VEB model), the following produced an effect:
    - P1: Power On/Off.
    - P2: "1" → cool, "2" → heat, "3" → ventilate, "4" → Auto mode (if forced via configuration), "5" → dehumidify.
    - P3: Fan speed for cold/ventilate (values: 1, 2, 3).
@@ -37,7 +38,7 @@ Detailed Information on "Px" Modes and Example Curl Commands
    - P8: Temperature setting for heat (e.g., "23.0").
 
 5. Example Curl Commands for Events  
-   (Replace YOUR_EMAIL@example.com, YOUR_TOKEN, YOUR_DEVICE_ID, and YOUR_INSTALLATION_ID with generic placeholders)
+   (Replace YOUR_EMAIL@example.com, YOUR_TOKEN, YOUR_DEVICE_ID, and YOUR_INSTALLATION_ID with generic placeholders.)
 
    - Power On (P1=1):  
      curl -v "https://dkn.airzonecloud.com/events/?user_email=YOUR_EMAIL@example.com&user_token=YOUR_TOKEN" -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json;charset=UTF-8" -H "Accept: application/json, text/plain, */*" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -d "{\"event\": {\"cgi\": \"modmaquina\", \"device_id\": \"YOUR_DEVICE_ID\", \"option\": \"P1\", \"value\": 1}}"
