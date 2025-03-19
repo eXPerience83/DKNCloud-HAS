@@ -154,7 +154,7 @@ class AirzoneClimate(ClimateEntity):
 
         Must be called after changing the mode.
         For HEAT or AUTO modes, use P8; for COOL mode use P7.
-        The value is constrained to the device limits and sent as an integer with '.0'.
+        The value is constrained to the device limits and sent as an integer with ".0".
         """
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
@@ -205,4 +205,6 @@ class AirzoneClimate(ClimateEntity):
             }
         }
         _LOGGER.info("Sending command: %s", payload)
-        asyncio.create_task(self._api.send_event(payload))
+        # Use run_coroutine_threadsafe to schedule the coroutine in the main loop
+        import asyncio
+        asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self.hass.loop)
