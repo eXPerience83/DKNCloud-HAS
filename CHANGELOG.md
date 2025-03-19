@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-03-18
+### Added
+- Integration updated to version 0.2.0.
+- Updated API endpoints and BASE_URL in const.py.
+- Simplified const.py (eliminado MODES_CONVERTER del código; se documenta en info.md).
+- Updated User-Agent in airzone_api.py to simulate a Windows browser.
+- Implemented basic control methods in climate.py: turn_on, turn_off, set_hvac_mode (including support for "heat-cold-auto" via P2=4, forced under user responsibility), and set_temperature (using P8 for heat and P7 for cool, with temperature values sent as decimals).
+- Added property `fan_speed_range` in climate.py to derive allowed fan speeds from "availables_speeds".
+- Added sensor platform (sensor.py) for a temperature probe sensor to record the "local_temp".
+- Added file info.md with detailed information about the "Px" modes and example curl commands (using placeholders for sensitive data).
+- Documented that the original package defined modes up to "8", but in our tests only modes 1–5 produce an effect.
+  
+### Changed
+- Version updated in manifest.json to 0.2.0.
+- Minor adjustments in config_flow.py, __init__.py, and README.md.
+
+### Pending (for future versions)
+- Refinement of control actions in climate.py if needed.
+- Further testing and potential implementation of additional options (P5, P6) if required.
+
 ## [0.1.5] - 2025-03-16
 ### Added
 - **Airzone API Client:** Updated module `airzone_api.py` now uses the endpoints from the original AirzoneCloudDaikin package:
