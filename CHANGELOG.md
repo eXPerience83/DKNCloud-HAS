@@ -5,17 +5,18 @@ All notable changes to this project will be documented in this file.
 ## [0.2.3] - 2025-03-19
 ### Added
 - Updated version to 0.2.3.
-- Fixed unique_id for climate and sensor entities so they are properly registered and managed in the Home Assistant UI.
+- Fixed unique_id for both climate and sensor entities so they are properly registered and managed in the Home Assistant UI.
 - Added asynchronous method `send_event` to the AirzoneAPI class in airzone_api.py.
 - Updated config_flow.py to include the "force_hvac_mode_auto" option.
 - Updated set_temperature in climate.py to constrain values based on device limits (min_limit_cold/max_limit_cold for cool modes; min_limit_heat/max_limit_heat for heat modes) and format the value as an integer with ".0".
-- Updated info.md to include the original MODES_CONVERTER mapping from max13fr and detailed curl command examples (using generic placeholders).
+- Updated info.md with the original MODES_CONVERTER mapping from max13fr and detailed curl command examples (using generic placeholders).
 
 ### Changed
 - Replaced deprecated async_forward_entry_setup with async_forward_entry_setups in __init__.py.
 - Updated imports in climate.py and sensor.py to use HVACMode, ClimateEntityFeature, and UnitOfTemperature.
-- Renamed "heat-cold-auto" to HVAC_MODE_AUTO in the code.
+- Renamed "heat-cold-auto" to HVACMode.AUTO in the code.
 - Updated README.md with full integration details in English.
+- Updated all text and comments to English.
 
 ### Pending
 - Further verification of fan speed control in different modes.
