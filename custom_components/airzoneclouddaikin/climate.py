@@ -9,7 +9,7 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-HVAC_MODE_AUTO = HVACMode("auto")  # Modo automático forzado
+HVAC_MODE_AUTO = HVACMode("auto")  # Forced auto mode
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the climate platform from a config entry."""
@@ -47,7 +47,7 @@ class AirzoneClimate(ClimateEntity):
         
         :param api: The AirzoneAPI instance.
         :param device_data: Dictionary with device information.
-        :param config: Integration configuration (contains, e.g., force_hvac_mode_auto).
+        :param config: Integration configuration.
         """
         self._api = api
         self._device_data = device_data
@@ -76,8 +76,8 @@ class AirzoneClimate(ClimateEntity):
     def hvac_modes(self):
         """Return the list of supported HVAC modes.
         
-        Se incluyen los modos estándar y, si se ha habilitado 'force_hvac_mode_auto'
-        en la configuración, se añade HVAC_MODE_AUTO.
+        Standard modes are included, and if 'force_hvac_mode_auto' is enabled in the configuration,
+        HVAC_MODE_AUTO is added.
         """
         modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.FAN_ONLY, HVACMode.DRY]
         if self._config.get("force_hvac_mode_auto", False):
@@ -115,7 +115,7 @@ class AirzoneClimate(ClimateEntity):
     def turn_on(self):
         """Turn on the device by sending P1=1."""
         self._send_command("P1", 1)
-        self._hvac_mode = HVACMode.HEAT  # Por defecto, se asume que se enciende en modo heat.
+        self._hvac_mode = HVACMode.HEAT  # Default to heat when turned on.
         self.schedule_update_ha_state()
 
     def turn_off(self):
@@ -127,7 +127,7 @@ class AirzoneClimate(ClimateEntity):
     def set_hvac_mode(self, hvac_mode):
         """Set the HVAC mode.
         
-        Mapea los siguientes modos:
+        Mapping:
          - HVACMode.COOL -> P2=1
          - HVACMode.HEAT -> P2=2
          - HVACMode.FAN_ONLY -> P2=3
@@ -151,9 +151,9 @@ class AirzoneClimate(ClimateEntity):
     def set_temperature(self, **kwargs):
         """Set the target temperature.
 
-        Debe llamarse después de haber cambiado el modo.
-        Para modos de calor (HEAT o HVAC_MODE_AUTO) se usa P8; para modo frío se usa P7.
-        Se limitan los valores a los rangos definidos por la API y se envía un entero formateado con ".0".
+        Must be called after changing the mode.
+        For heat modes (HEAT or HVAC_MODE_AUTO) use P8; for cool mode use P7.
+        The value is limited to the range provided by the API and sent as an integer with '.0'.
         """
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
@@ -176,8 +176,8 @@ class AirzoneClimate(ClimateEntity):
 
     def set_fan_speed(self, speed):
         """Set the fan speed.
-        
-        Usa P3 para modos de ventilación en frío/ventilate y P4 para modos de calor/auto.
+
+        Uses P3 for cool/ventilate modes and P4 for heat/auto modes.
         """
         try:
             speed = int(speed)
