@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.43] - 2025-03-19
+### Changed
+- Renamed "heat-cold-auto" to HVACMode.AUTO (module-level constant HVAC_MODE_AUTO) in the code.
+
 ## [0.2.3] - 2025-03-19
 ### Added
 - Updated version to 0.2.3.
