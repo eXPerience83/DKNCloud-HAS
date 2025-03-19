@@ -6,7 +6,7 @@ from homeassistant.const import TEMP_CELSIUS
 _LOGGER = logging.getLogger(__name__)
 
 class AirzoneTemperatureSensor(SensorEntity):
-    """Representation of a temperature sensor for an Airzone device."""
+    """Representation of a temperature sensor for an Airzone device (local_temp)."""
 
     def __init__(self, device_data: dict):
         """Initialize the sensor."""
