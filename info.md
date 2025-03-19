@@ -28,9 +28,9 @@ curl -v "https://dkn.airzonecloud.com/installation_relations/?format=json&user_e
    
    En nuestras pruebas (con la máquina modelo ADEQ125B2VEB), solo han funcionado los siguientes:
    - P1: Encendido/Apagado.
-   - P2: "1" → cool, "2" → heat, "3" → ventilate, "4" → heat-cold-auto (forzado si se activa en configuración), "5" → dehumidify.
-   - P3: Velocidad del ventilador en modo frío (1, 2, 3).
-   - P4: Velocidad del ventilador en modo calor (1, 2, 3).
+   - P2: "1" → cool, "2" → heat, "3" → ventilate, "4" → Auto mode (forzado si se activa en configuración), "5" → dehumidify.
+   - P3: Velocidad del ventilador en modo frío y ventilación (1, 2, 3).
+   - P4: Velocidad del ventilador en modo calor y auto (1, 2, 3).
    - P7: Ajuste de consigna para frío (enviar valores con decimales, por ejemplo, "25.0").
    - P8: Ajuste de consigna para calor (enviar valores con decimales, por ejemplo, "23.0").
 
