@@ -17,6 +17,14 @@ class AirzoneTemperatureSensor(SensorEntity):
         self.update_state()
 
     @property
+    def unique_id(self):
+        """Return a unique ID for the sensor."""
+        device_id = self._device_data.get("id")
+        if device_id:
+            return f"{device_id}_temperature"
+        return None
+
+    @property
     def name(self):
         """Return the name of the sensor."""
         return self._name
