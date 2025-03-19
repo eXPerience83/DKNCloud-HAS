@@ -11,7 +11,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up DKN Cloud for HASS from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
-    # Use async_forward_entry_setups to forward to both climate and sensor platforms.
+    # Se usa async_forward_entry_setups para configurar ambas plataformas: climate y sensor.
     await hass.config_entries.async_forward_entry_setups(entry, ["climate", "sensor"])
     _LOGGER.info("DKN Cloud for HASS integration configured successfully.")
     return True
