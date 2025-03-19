@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [0.2.43] - 2025-03-19
 ### Changed
+-Climate Platform (climate.py):
+  • Fixed the error “no running event loop” by replacing asyncio.create_task with self.hass.async_create_task in _send_command.
+  • Ensured unique_id is set using the device id.
+-Sensor Platform (sensor.py):
+  • Added async_setup_entry so that sensor entities are loaded from the config entry.
 - Renamed "heat-cold-auto" to HVACMode.AUTO (module-level constant HVAC_MODE_AUTO) in the code.
 
 ## [0.2.3] - 2025-03-19
