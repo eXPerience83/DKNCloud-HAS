@@ -23,15 +23,15 @@ Basic control methods have been implemented in `climate.py`:
   - "1" for cool,
   - "2" for heat,
   - "3" for ventilate,
-  - "4" for auto mode (HVAC_MODE_AUTO, forced if enabled in the configuration),
+  - "4" for auto mode (HVACMode.AUTO, forced if enabled in the configuration),
   - "5" for dehumidify.
-- **set_temperature:** Sends an event with P8 (for heat or HVAC_MODE_AUTO) or P7 (for cool) with temperature values (must be an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
+- **set_temperature:** Sends an event with P8 (for heat or HVACMode.AUTO) or P7 (for cool) with temperature values (an integer formatted as, e.g., "23.0") and constrained to the ranges provided by the device.
 - **set_fan_speed:** Uses P3 to adjust the fan speed in cold/ventilate modes and P4 in heat/auto modes.
 
 The API returns additional data (firmware, brand, available fan speeds, temperature limits, etc.) that the integration uses:
 - The field `availables_speeds` defines the valid fan speed options.
 - The fields `min_limit_cold`, `max_limit_cold`, `min_limit_heat`, and `max_limit_heat` define the valid temperature ranges for cold and heat modes.
-- Temperatures are always sent as integer values with a ".0" appended (e.g., 23 → "23.0").
+- Temperatures are always sent as integer values with a ".0" appended.
 
 > **Important:**  
 > Daikin climate equipment uses two consigns (one for heat and one for cold). Change the mode first (e.g., to heat) and then adjust the temperature. Although the original package defined modes up to "8", our tests indicate that only modes 1–5 produce an effect. Note that the API differentiates between fan speeds in cold and heat modes.
@@ -61,7 +61,7 @@ After installation, add the integration via the Home Assistant UI by going to **
 The configuration will ask for:
 - **Username and Password:** Your Airzone Cloud account credentials.
 - **Scan Interval:** Time in seconds between updates.
-- **Force HVAC Mode Auto:** (Optional checkbox) If enabled, the mode "auto" (HVAC_MODE_AUTO) will be available for selection. Use this mode under your own responsibility.
+- **Force HVAC Mode Auto:** (Optional checkbox) If enabled, the mode "auto" (HVACMode.AUTO) will be available for selection. Use this mode under your own responsibility.
 
 ## Usage
 
