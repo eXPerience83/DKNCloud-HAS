@@ -28,7 +28,7 @@ class AirzoneAPI:
 
     async def login(self) -> bool:
         """Authenticate with the API and obtain a token.
-
+        
         Sends a POST request to the /users/sign_in endpoint.
         Returns True if successful, False otherwise.
         """
@@ -55,19 +55,17 @@ class AirzoneAPI:
 
     async def fetch_installations(self) -> List[Dict]:
         """Fetch installations using the obtained token.
-
+        
         Sends a GET request to the /installation_relations endpoint.
         Returns a list of installations if successful.
         """
         if not self.token:
             _LOGGER.error("Cannot fetch installations without a valid token.")
             return []
+        # Usamos query parameters para incluir el email y token, similar a lo probado para devices.
         url = f"{BASE_URL}{API_INSTALLATION_RELATIONS}"
-        params = {"format": "json"}
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "Authorization": f"Bearer {self.token}",
-        }
+        params = {"format": "json", "user_email": self._username, "user_token": self.token}
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
         try:
             async with self._session.get(url, params=params, headers=headers) as response:
                 if response.status == 200:
@@ -84,7 +82,7 @@ class AirzoneAPI:
 
     async def fetch_devices(self, installation_id: str) -> List[Dict]:
         """Fetch devices for a given installation using the obtained token.
-
+        
         Sends a GET request to the /devices endpoint with the installation_id parameter.
         Returns a list of devices if successful.
         """
