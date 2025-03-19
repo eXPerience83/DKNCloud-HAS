@@ -8,20 +8,15 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the sensor platform from a config entry."""
     config = entry.data
-    username = config.get("username")
-    password = config.get("password")
-    if not username or not password:
-        _LOGGER.error("Missing username or password")
-        return
     from homeassistant.helpers.aiohttp_client import async_get_clientsession
-    from .airzone_api import AirzoneAPI
     session = async_get_clientsession(hass)
-    api = AirzoneAPI(username, password, session)
+    from .airzone_api import AirzoneAPI
+    api = AirzoneAPI(config.get("username"), config.get("password"), session)
     if not await api.login():
-        _LOGGER.error("Login to Airzone API failed.")
+        _LOGGER.error("Login to Airzone API failed in sensor setup.")
         return
     installations = await api.fetch_installations()
-    entities = []
+    sensors = []
     for relation in installations:
         installation = relation.get("installation")
         if not installation:
@@ -31,8 +26,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
         devices = await api.fetch_devices(installation_id)
         for device in devices:
-            entities.append(AirzoneTemperatureSensor(device))
-    async_add_entities(entities, True)
+            sensors.append(AirzoneTemperatureSensor(device))
+    async_add_entities(sensors, True)
 
 class AirzoneTemperatureSensor(SensorEntity):
     """Representation of a temperature sensor for an Airzone device (local_temp)."""
