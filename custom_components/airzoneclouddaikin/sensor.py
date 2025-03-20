@@ -86,6 +86,7 @@ class AirzoneTemperatureSensor(SensorEntity):
     async def async_update(self):
         """Update the sensor state."""
         self.update_state()
+        self.async_write_ha_state()
 
     def update_state(self):
         """Update the state from device data."""
