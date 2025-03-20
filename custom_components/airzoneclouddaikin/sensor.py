@@ -2,19 +2,14 @@
 import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
+from .airzone_api import AirzoneAPI
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the sensor platform from a config entry."""
-    config = entry.data
-    from homeassistant.helpers.aiohttp_client import async_get_clientsession
-    session = async_get_clientsession(hass)
-    from .airzone_api import AirzoneAPI
-    api = AirzoneAPI(config.get("username"), config.get("password"), session)
-    if not await api.login():
-        _LOGGER.error("Login to Airzone API failed in sensor setup.")
-        return
+    api = hass.data[DOMAIN][entry.entry_id]["api"]  # Obtener la instancia de API desde hass.data
     installations = await api.fetch_installations()
     sensors = []
     for relation in installations:
@@ -26,19 +21,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
         devices = await api.fetch_devices(installation_id)
         for device in devices:
-            sensors.append(AirzoneTemperatureSensor(device))
+            sensors.append(AirzoneTemperatureSensor(api, installation_id, device))
     async_add_entities(sensors, True)
 
 class AirzoneTemperatureSensor(SensorEntity):
     """Representation of a temperature sensor for an Airzone device (local_temp)."""
 
-    def __init__(self, device_data: dict):
+    def __init__(self, api: AirzoneAPI, installation_id: str, device_data: dict):
         """Initialize the sensor."""
+        self._api = api
+        self._installation_id = installation_id
         self._device_data = device_data
         self._name = f"{device_data.get('name', 'Airzone Device')} Temperature"
         self._state = None
         self._unit_of_measurement = UnitOfTemperature.CELSIUS
-        self.update_state()
 
     @property
     def unique_id(self):
@@ -77,20 +73,26 @@ class AirzoneTemperatureSensor(SensorEntity):
     def device_info(self):
         """Return device info to link the sensor to a device in HA."""
         return {
-            "identifiers": {("airzoneclouddaikin", self._device_data.get("id"))},
+            "identifiers": {(DOMAIN, self._device_data.get("id"))},
             "name": self._device_data.get("name"),
             "manufacturer": self._device_data.get("brand", "Daikin"),
             "model": self._device_data.get("firmware", "Unknown"),
         }
 
     async def async_update(self):
-        """Update the sensor state."""
-        self.update_state()
-        self.async_write_ha_state()
-
-    def update_state(self):
-        """Update the state from device data."""
+        """Fetch the latest device data and update the state."""
+        devices = await self._api.fetch_devices(self._installation_id)
+        for dev in devices:
+            if dev.get("id") == self._device_data.get("id"):
+                self._device_data = dev
+                break
         try:
             self._state = float(self._device_data.get("local_temp"))
         except (ValueError, TypeError):
             self._state = None
+        self.async_write_ha_state()
+
+    @property
+    def scan_interval(self):
+        """Return the scan interval for this entity."""
+        return 10  # segundos
