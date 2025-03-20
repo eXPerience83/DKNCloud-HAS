@@ -9,12 +9,12 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-# Define a constant for forced Auto mode.
-HVAC_MODE_AUTO = HVACMode.AUTO
+# Forced Auto mode constant
+HVAC_MODE_AUTO = HVACMode("auto")
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the climate platform from a config entry."""
-    api = hass.data[DOMAIN][entry.entry_id]["api"]  # Use the shared API instance
+    api = hass.data[DOMAIN][entry.entry_id]["api"]
     installations = await api.fetch_installations()
     entities = []
     for relation in installations:
@@ -39,9 +39,10 @@ class AirzoneClimate(ClimateEntity):
         self._config = config
         self._name = device_data.get("name", "Airzone Device")
         self._device_id = device_data.get("id")
-        self._hvac_mode = HVACMode.OFF
+        # Initialize HVAC mode from device data if available; otherwise default to off.
+        self._hvac_mode = HVACMode("off")
         self._target_temperature = None
-        self._fan_mode = None  # current fan speed (as string, e.g. "1")
+        self._fan_mode = None  # current fan speed as string
         self.hass = hass
 
     @property
@@ -61,7 +62,11 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def hvac_modes(self):
-        """Return the list of supported HVAC modes."""
+        """Return supported HVAC modes.
+        
+        Standard modes are: off, cool, heat, fan_only, and dry. If force_hvac_mode_auto is enabled,
+        HVAC_MODE_AUTO is added.
+        """
         modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.FAN_ONLY, HVACMode.DRY]
         if self._config.get("force_hvac_mode_auto", False):
             modes.append(HVAC_MODE_AUTO)
@@ -95,7 +100,7 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def device_info(self):
-        """Return device info for the device registry."""
+        """Return device info for grouping in the HA device registry."""
         return {
             "identifiers": {(DOMAIN, self._device_id)},
             "name": self._device_data.get("name"),
@@ -104,7 +109,7 @@ class AirzoneClimate(ClimateEntity):
         }
 
     async def async_update(self):
-        """Poll updated device data from the API."""
+        """Poll updated device data from the API and update the entity state."""
         installations = await self._api.fetch_installations()
         for relation in installations:
             installation = relation.get("installation")
@@ -113,7 +118,7 @@ class AirzoneClimate(ClimateEntity):
                 for dev in devices:
                     if dev.get("id") == self._device_id:
                         self._device_data = dev
-                        # Update HVAC mode based on power and mode fields
+                        # Update HVAC mode based on power and mode fields.
                         if int(dev.get("power", 0)) == 1:
                             mode_val = dev.get("mode")
                             if mode_val == "1":
@@ -130,29 +135,41 @@ class AirzoneClimate(ClimateEntity):
                                 self._hvac_mode = HVACMode.HEAT
                         else:
                             self._hvac_mode = HVACMode.OFF
-                        # Update target temperature
+                        # Update target temperature.
                         if self._hvac_mode in [HVACMode.HEAT, HVAC_MODE_AUTO]:
                             self._target_temperature = int(float(dev.get("heat_consign", "0")))
                         else:
                             self._target_temperature = int(float(dev.get("cold_consign", "0")))
-                        # Update fan speed
+                        # Update fan speed.
                         self._fan_mode = str(dev.get("current_fan_speed", ""))
                         break
         self.async_write_ha_state()
 
     def turn_on(self):
-        """Turn on the device."""
+        """Turn on the device (send P1=1)."""
         self._send_command("P1", 1)
         self.schedule_update_ha_state()
 
     def turn_off(self):
-        """Turn off the device."""
+        """Turn off the device (send P1=0)."""
         self._send_command("P1", 0)
         self._hvac_mode = HVACMode.OFF
         self.schedule_update_ha_state()
 
     def set_hvac_mode(self, hvac_mode):
-        """Set the HVAC mode."""
+        """Set the HVAC mode.
+        
+        If hvac_mode is a string, convert it to HVACMode.
+        Mapping:
+          - HVACMode.OFF: call turn_off() and return.
+          - HVACMode.COOL -> P2=1
+          - HVACMode.HEAT -> P2=2
+          - HVACMode.FAN_ONLY -> P2=3
+          - HVACMode.DRY -> P2=5
+          - HVAC_MODE_AUTO -> P2=4
+        """
+        if isinstance(hvac_mode, str):
+            hvac_mode = HVACMode(hvac_mode)
         if hvac_mode == HVACMode.OFF:
             self.turn_off()
             return
@@ -171,7 +188,12 @@ class AirzoneClimate(ClimateEntity):
             _LOGGER.error("Unsupported HVAC mode: %s", hvac_mode)
 
     def set_temperature(self, **kwargs):
-        """Set the target temperature."""
+        """Set the target temperature.
+        
+        Must be called after changing the mode.
+        For HEAT or AUTO modes, use P8; for COOL mode use P7.
+        Temperature adjustments are disabled in DRY and FAN_ONLY modes.
+        """
         if self._hvac_mode in [HVACMode.DRY, HVACMode.FAN_ONLY]:
             _LOGGER.warning("Temperature adjustment not supported in mode %s", self._hvac_mode)
             return
@@ -195,7 +217,11 @@ class AirzoneClimate(ClimateEntity):
             self.schedule_update_ha_state()
 
     def set_fan_speed(self, speed):
-        """Set the fan speed."""
+        """Set the fan speed.
+        
+        Uses P3 for COOL and FAN_ONLY modes, and P4 for HEAT/AUTO modes.
+        Fan speed adjustment is disabled in DRY mode.
+        """
         try:
             speed = int(speed)
         except ValueError:
@@ -203,6 +229,9 @@ class AirzoneClimate(ClimateEntity):
             return
         if speed not in self.fan_speed_range:
             _LOGGER.error("Fan speed %s not in valid range %s", speed, self.fan_speed_range)
+            return
+        if self._hvac_mode == HVACMode.DRY:
+            _LOGGER.warning("Fan speed adjustment not supported in DRY mode")
             return
         if self._hvac_mode in [HVACMode.COOL, HVACMode.FAN_ONLY]:
             self._send_command("P3", speed)
@@ -212,7 +241,7 @@ class AirzoneClimate(ClimateEntity):
         self.schedule_update_ha_state()
 
     def set_preset_mode(self, preset_mode):
-        """Set the preset mode (if supported)."""
+        """Set the preset mode (if supported). Supported values: 'away', 'none'."""
         if preset_mode not in ["away", "none"]:
             _LOGGER.error("Unsupported preset mode: %s", preset_mode)
             return
@@ -222,7 +251,7 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def fan_speed_range(self):
-        """Return a list of valid fan speeds."""
+        """Return a list of valid fan speeds based on 'availables_speeds' from device data."""
         speeds_str = self._device_data.get("availables_speeds", "3")
         try:
             speeds = int(speeds_str)
@@ -231,7 +260,7 @@ class AirzoneClimate(ClimateEntity):
         return list(range(1, speeds + 1))
 
     def _send_command(self, option, value):
-        """Send a command to the device."""
+        """Send a command to the device using the events endpoint."""
         payload = {
             "event": {
                 "cgi": "modmaquina",
@@ -241,4 +270,5 @@ class AirzoneClimate(ClimateEntity):
             }
         }
         _LOGGER.info("Sending command: %s", payload)
-        self.hass.async_create_task(self._api.send_event(payload))
+        # Use run_coroutine_threadsafe to safely schedule the async API call from a thread.
+        asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self.hass.loop)
