@@ -47,7 +47,10 @@ class AirzoneTemperatureSensor(SensorEntity):
         else:
             self._attr_unique_id = hashlib.sha256(name.encode("utf-8")).hexdigest()
 
+        # Set the unit attributes explicitly for Home Assistant statistics.
         self._attr_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+
         self._attr_device_class = "temperature"
         self._attr_state_class = "measurement"
         self._attr_icon = "mdi:thermometer"
