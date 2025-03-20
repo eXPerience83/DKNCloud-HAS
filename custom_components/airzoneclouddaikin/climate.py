@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode, SUPPORT_FAN_MODE
+from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode
 from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
 from .const import DOMAIN
 from .airzone_api import AirzoneAPI
@@ -45,7 +45,7 @@ class AirzoneClimate(ClimateEntity):
 
     def __init__(self, api: AirzoneAPI, device_data: dict, config: dict):
         """Initialize the climate entity.
-
+        
         :param api: The AirzoneAPI instance.
         :param device_data: Dictionary with device information.
         :param config: Integration configuration.
@@ -58,8 +58,6 @@ class AirzoneClimate(ClimateEntity):
         self._hvac_mode = HVACMode.OFF
         self._target_temperature = None
         self._fan_mode = None  # Current fan speed as a string (e.g., "1")
-        # For initial state, you might want to parse the device_data fields.
-        # (This can be extended to parse power, current mode, temperature, fan speed, etc.)
 
     @property
     def unique_id(self):
@@ -100,9 +98,8 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def supported_features(self):
-        """Return the supported features."""
-        # SUPPORT_FAN_MODE added for fan speed control
-        return ClimateEntityFeature.TARGET_TEMPERATURE | SUPPORT_FAN_MODE
+        """Return the supported features (target temperature and fan mode)."""
+        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
 
     @property
     def fan_modes(self):
@@ -118,7 +115,6 @@ class AirzoneClimate(ClimateEntity):
     def turn_on(self):
         """Turn on the device by sending P1=1."""
         self._send_command("P1", 1)
-        # Optionally, update hvac_mode if not already on
         self._hvac_mode = HVACMode.HEAT  # Default to HEAT when turned on
         self.schedule_update_ha_state()
 
@@ -195,7 +191,7 @@ class AirzoneClimate(ClimateEntity):
         if speed not in self.fan_speed_range:
             _LOGGER.error("Fan speed %s not in valid range %s", speed, self.fan_speed_range)
             return
-        if self._hvac_mode in [HVACMode.COOL] or self._hvac_mode == "ventilate":
+        if self._hvac_mode in [HVACMode.COOL, HVACMode.FAN_ONLY]:
             self._send_command("P3", speed)
         elif self._hvac_mode in [HVACMode.HEAT, HVAC_MODE_AUTO]:
             self._send_command("P4", speed)
@@ -227,15 +223,7 @@ class AirzoneClimate(ClimateEntity):
         }
         _LOGGER.info("Sending command: %s", payload)
         if self.hass is not None:
-            # Use run_coroutine_threadsafe to safely schedule the coroutine on the main loop
+            # Safely schedule the coroutine on the main event loop from a thread
             asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self.hass.loop)
         else:
             _LOGGER.error("hass is not available; cannot send command.")
-
-    async def async_update(self):
-        """Update the device data from the API.
-        
-        (This method can be expanded to fetch updated device info and update self._device_data.)
-        """
-        # For now, simply schedule an update. Future versions may implement polling.
-        pass
