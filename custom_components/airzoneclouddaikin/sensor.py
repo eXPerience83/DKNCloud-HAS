@@ -2,14 +2,13 @@
 import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
-from .airzone_api import AirzoneAPI
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the sensor platform from a config entry."""
-    api = hass.data[DOMAIN][entry.entry_id]["api"]  # Obtener la instancia de API desde hass.data
+    api = hass.data[DOMAIN][entry.entry_id]["api"]
     installations = await api.fetch_installations()
     sensors = []
     for relation in installations:
@@ -21,16 +20,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
         devices = await api.fetch_devices(installation_id)
         for device in devices:
-            sensors.append(AirzoneTemperatureSensor(api, installation_id, device))
+            sensors.append(AirzoneTemperatureSensor(device))
     async_add_entities(sensors, True)
 
 class AirzoneTemperatureSensor(SensorEntity):
     """Representation of a temperature sensor for an Airzone device (local_temp)."""
 
-    def __init__(self, api: AirzoneAPI, installation_id: str, device_data: dict):
+    def __init__(self, device_data: dict):
         """Initialize the sensor."""
-        self._api = api
-        self._installation_id = installation_id
         self._device_data = device_data
         self._name = f"{device_data.get('name', 'Airzone Device')} Temperature"
         self._state = None
@@ -71,7 +68,7 @@ class AirzoneTemperatureSensor(SensorEntity):
 
     @property
     def device_info(self):
-        """Return device info to link the sensor to a device in HA."""
+        """Return device info to link this sensor to a device in HA."""
         return {
             "identifiers": {(DOMAIN, self._device_data.get("id"))},
             "name": self._device_data.get("name"),
@@ -80,12 +77,10 @@ class AirzoneTemperatureSensor(SensorEntity):
         }
 
     async def async_update(self):
-        """Fetch the latest device data and update the state."""
-        devices = await self._api.fetch_devices(self._installation_id)
-        for dev in devices:
-            if dev.get("id") == self._device_data.get("id"):
-                self._device_data = dev
-                break
+        """Update the sensor state.
+        
+        This method should be called periodically by Home Assistant.
+        """
         try:
             self._state = float(self._device_data.get("local_temp"))
         except (ValueError, TypeError):
@@ -94,5 +89,5 @@ class AirzoneTemperatureSensor(SensorEntity):
 
     @property
     def scan_interval(self):
-        """Return the scan interval for this entity."""
-        return 10  # segundos
+        """Return the scan interval (in seconds) for the sensor."""
+        return 10
