@@ -37,18 +37,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
         devices = await api.fetch_devices(installation_id)
         for device in devices:
-            entities.append(AirzoneClimate(api, device, config))
+            entities.append(AirzoneClimate(api, device, config, hass))
     async_add_entities(entities, True)
 
 class AirzoneClimate(ClimateEntity):
     """Representation of an Airzone Cloud Daikin climate device."""
 
-    def __init__(self, api: AirzoneAPI, device_data: dict, config: dict):
+    def __init__(self, api: AirzoneAPI, device_data: dict, config: dict, hass):
         """Initialize the climate entity.
         
         :param api: The AirzoneAPI instance.
         :param device_data: Dictionary with device information.
         :param config: Integration configuration.
+        :param hass: Home Assistant instance.
         """
         self._api = api
         self._device_data = device_data
@@ -57,7 +58,13 @@ class AirzoneClimate(ClimateEntity):
         self._device_id = device_data.get("id")
         self._hvac_mode = HVACMode.OFF
         self._target_temperature = None
-        self._fan_mode = None  # Current fan speed as a string (e.g., "1")
+        self._fan_mode = None  # current fan speed (as string, e.g. "1")
+        self._hass_loop = None  # to store hass event loop
+        self.hass = hass
+
+    async def async_added_to_hass(self):
+        """Store the Home Assistant event loop for later use."""
+        self._hass_loop = self.hass.loop
 
     @property
     def unique_id(self):
@@ -77,8 +84,8 @@ class AirzoneClimate(ClimateEntity):
     @property
     def hvac_modes(self):
         """Return the list of supported HVAC modes.
-
-        Standard modes are included, and if 'force_hvac_mode_auto' is enabled in the configuration,
+        
+        Standard modes are included, and if 'force_hvac_mode_auto' is enabled in configuration,
         HVAC_MODE_AUTO is added.
         """
         modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.FAN_ONLY, HVACMode.DRY]
@@ -112,10 +119,20 @@ class AirzoneClimate(ClimateEntity):
         """Return the current fan mode (speed)."""
         return self._fan_mode
 
+    @property
+    def device_info(self):
+        """Return device info to link the entity to a device in HA."""
+        return {
+            "identifiers": {(DOMAIN, self._device_id)},
+            "name": self._name,
+            "manufacturer": self._device_data.get("brand", "Daikin"),
+            "model": self._device_data.get("firmware", "Unknown"),
+        }
+
     def turn_on(self):
         """Turn on the device by sending P1=1."""
         self._send_command("P1", 1)
-        self._hvac_mode = HVACMode.HEAT  # Default to HEAT when turned on
+        # Do not force a mode change; allow user to select mode later.
         self.schedule_update_ha_state()
 
     def turn_off(self):
@@ -128,7 +145,7 @@ class AirzoneClimate(ClimateEntity):
         """Set the HVAC mode.
 
         Mapping:
-         - HVACMode.OFF: call turn_off() and return.
+         - HVACMode.OFF: calls turn_off() and returns.
          - HVACMode.COOL -> P2=1
          - HVACMode.HEAT -> P2=2
          - HVACMode.FAN_ONLY -> P2=3
@@ -181,7 +198,7 @@ class AirzoneClimate(ClimateEntity):
     def set_fan_speed(self, speed):
         """Set the fan speed.
 
-        Uses P3 for COOL/ventilate modes and P4 for HEAT/AUTO modes.
+        Uses P3 to adjust fan speed in COOL and FAN_ONLY mode and P4 in HEAT/AUTO modes.
         """
         try:
             speed = int(speed)
@@ -222,8 +239,7 @@ class AirzoneClimate(ClimateEntity):
             }
         }
         _LOGGER.info("Sending command: %s", payload)
-        if self.hass is not None:
-            # Safely schedule the coroutine on the main event loop from a thread
-            asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self.hass.loop)
+        if self._hass_loop:
+            asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self._hass_loop)
         else:
-            _LOGGER.error("hass is not available; cannot send command.")
+            _LOGGER.error("No event loop available; cannot send command.")
