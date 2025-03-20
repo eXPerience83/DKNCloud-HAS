@@ -9,7 +9,7 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-# Forced Auto mode constant
+# Define forced auto mode constant
 HVAC_MODE_AUTO = HVACMode("auto")
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -58,12 +58,12 @@ class AirzoneClimate(ClimateEntity):
         self._device_id = device_data.get("id")
         self._hvac_mode = HVACMode.OFF
         self._target_temperature = None
-        self._fan_mode = None  # current fan speed as string (e.g. "1")
+        self._fan_mode = None  # current fan speed as string
         self._hass_loop = None  # will be set in async_added_to_hass
         self.hass = hass
 
     async def async_added_to_hass(self):
-        """Store the Home Assistant event loop for later use."""
+        """Store the Home Assistant event loop for thread-safe commands."""
         self._hass_loop = self.hass.loop
 
     @property
@@ -123,6 +123,8 @@ class AirzoneClimate(ClimateEntity):
             "name": self._device_data.get("name"),
             "manufacturer": self._device_data.get("brand", "Daikin"),
             "model": self._device_data.get("firmware", "Unknown"),
+            "sw_version": self._device_data.get("update_date", "Unknown"),
+            "via_device": (DOMAIN, self._device_id),
         }
 
     async def async_update(self):
@@ -139,23 +141,28 @@ class AirzoneClimate(ClimateEntity):
                             mode_val = dev.get("mode")
                             if mode_val == "1":
                                 self._hvac_mode = HVACMode.COOL
+                                self._target_temperature = int(float(dev.get("cold_consign", "0")))
+                                self._fan_mode = str(dev.get("cold_speed", ""))
                             elif mode_val == "2":
                                 self._hvac_mode = HVACMode.HEAT
+                                self._target_temperature = int(float(dev.get("heat_consign", "0")))
+                                self._fan_mode = str(dev.get("heat_speed", ""))
                             elif mode_val == "3":
                                 self._hvac_mode = HVACMode.FAN_ONLY
+                                self._fan_mode = str(dev.get("cold_speed", ""))
                             elif mode_val == "5":
                                 self._hvac_mode = HVACMode.DRY
+                                self._fan_mode = ""
                             elif mode_val == "4":
                                 self._hvac_mode = HVAC_MODE_AUTO
+                                self._target_temperature = int(float(dev.get("heat_consign", "0")))
+                                self._fan_mode = str(dev.get("heat_speed", ""))
                             else:
                                 self._hvac_mode = HVACMode.HEAT
+                                self._target_temperature = int(float(dev.get("heat_consign", "0")))
+                                self._fan_mode = str(dev.get("heat_speed", ""))
                         else:
                             self._hvac_mode = HVACMode.OFF
-                        if self._hvac_mode in [HVACMode.HEAT, HVAC_MODE_AUTO]:
-                            self._target_temperature = int(float(dev.get("heat_consign", "0")))
-                        else:
-                            self._target_temperature = int(float(dev.get("cold_consign", "0")))
-                        self._fan_mode = str(dev.get("current_fan_speed", ""))
                         break
         self.schedule_update_ha_state()
 
@@ -189,7 +196,7 @@ class AirzoneClimate(ClimateEntity):
          - HVACMode.DRY -> P2=5
          - HVAC_MODE_AUTO -> P2=4
         """
-        if hvac_mode == HVACMode.OFF or str(hvac_mode).lower() == "off":
+        if hvac_mode == HVACMode.OFF:
             self.turn_off()
             return
         mode_mapping = {
@@ -291,6 +298,7 @@ class AirzoneClimate(ClimateEntity):
         }
         _LOGGER.info("Sending command: %s", payload)
         if self._hass_loop:
+            # Use thread-safe coroutine execution on the hass loop.
             asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self._hass_loop)
         else:
             _LOGGER.error("No hass loop available; cannot send command.")
