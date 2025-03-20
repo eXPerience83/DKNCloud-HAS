@@ -9,7 +9,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the switch platform from a config entry."""
-    api = hass.data[DOMAIN][entry.entry_id]["api"]  # Use the shared API instance
+    api = hass.data[DOMAIN][entry.entry_id]["api"]
     installations = await api.fetch_installations()
     switches = []
     for relation in installations:
@@ -54,7 +54,7 @@ class AirzonePowerSwitch(SwitchEntity):
 
     @property
     def device_info(self):
-        """Return device info for the device registry."""
+        """Return device info for grouping in HA device registry."""
         return {
             "identifiers": {(DOMAIN, self._device_id)},
             "name": self._device_data.get("name"),
@@ -64,18 +64,26 @@ class AirzonePowerSwitch(SwitchEntity):
 
     async def async_turn_on(self, **kwargs):
         """Turn on the device."""
-        self._send_command("P1", 1)
+        await self.hass.async_add_executor_job(self.turn_on)
         self._state = True
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
         """Turn off the device."""
-        self._send_command("P1", 0)
+        await self.hass.async_add_executor_job(self.turn_off)
         self._state = False
         self.async_write_ha_state()
 
+    def turn_on(self):
+        """Turn on the device."""
+        self._send_command("P1", 1)
+
+    def turn_off(self):
+        """Turn off the device."""
+        self._send_command("P1", 0)
+
     def _send_command(self, option, value):
-        """Send a command to the device."""
+        """Send a command to the device using the events endpoint."""
         payload = {
             "event": {
                 "cgi": "modmaquina",
@@ -85,4 +93,4 @@ class AirzonePowerSwitch(SwitchEntity):
             }
         }
         _LOGGER.info("Sending power command: %s", payload)
-        self.hass.async_create_task(self._api.send_event(payload))
+        asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self.hass.loop)
