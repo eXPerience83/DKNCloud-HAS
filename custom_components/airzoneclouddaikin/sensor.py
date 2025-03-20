@@ -34,7 +34,7 @@ class AirzoneTemperatureSensor(SensorEntity):
     """Representation of a temperature sensor for an Airzone device (local_temp)."""
 
     def __init__(self, device_data: dict):
-        """Initialize the sensor."""
+        """Initialize the sensor with device data."""
         self._device_data = device_data
         self._name = f"{device_data.get('name', 'Airzone Device')} Temperature"
         self._state = None
@@ -47,8 +47,8 @@ class AirzoneTemperatureSensor(SensorEntity):
         device_id = self._device_data.get("id")
         if device_id and device_id.strip():
             return f"{device_id}_temperature"
-        # Fallback unique ID based on name hash
-        return hashlib.sha256(self._name.encode()).hexdigest()
+        # Fallback: use a hash of the sensor name to ensure a non-empty unique_id.
+        return hashlib.sha256(self._name.encode("utf-8")).hexdigest()
 
     @property
     def name(self):
@@ -77,7 +77,7 @@ class AirzoneTemperatureSensor(SensorEntity):
 
     @property
     def device_info(self):
-        """Return device info to link this sensor to a device in HA."""
+        """Return device info to link this sensor to a device in Home Assistant."""
         return {
             "identifiers": {( "airzoneclouddaikin", self._device_data.get("id") )},
             "name": self._device_data.get("name"),
@@ -86,7 +86,7 @@ class AirzoneTemperatureSensor(SensorEntity):
         }
 
     async def async_update(self):
-        """Update the sensor state."""
+        """Update the sensor state from the device data."""
         self.update_state()
         self.async_write_ha_state()
 
