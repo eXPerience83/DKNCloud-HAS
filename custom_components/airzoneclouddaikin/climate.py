@@ -9,7 +9,7 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-# Define a constant for forced Auto mode.
+# Forced Auto mode constant
 HVAC_MODE_AUTO = HVACMode("auto")
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -59,7 +59,7 @@ class AirzoneClimate(ClimateEntity):
         self._hvac_mode = HVACMode.OFF
         self._target_temperature = None
         self._fan_mode = None  # current fan speed as string (e.g. "1")
-        self._hass_loop = None  # Will be set in async_added_to_hass
+        self._hass_loop = None  # will be set in async_added_to_hass
         self.hass = hass
 
     async def async_added_to_hass(self):
@@ -83,11 +83,7 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def hvac_modes(self):
-        """Return the list of supported HVAC modes.
-        
-        Standard modes are included, and if 'force_hvac_mode_auto' is enabled in configuration,
-        HVAC_MODE_AUTO is added.
-        """
+        """Return the list of supported HVAC modes."""
         modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.FAN_ONLY, HVACMode.DRY]
         if self._config.get("force_hvac_mode_auto", False):
             modes.append(HVAC_MODE_AUTO)
@@ -110,7 +106,7 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def fan_modes(self):
-        """Return a list of valid fan speed options as strings based on 'availables_speeds'."""
+        """Return a list of valid fan speeds as strings based on 'availables_speeds'."""
         speeds = self.fan_speed_range
         return [str(speed) for speed in speeds]
 
@@ -155,19 +151,21 @@ class AirzoneClimate(ClimateEntity):
                                 self._hvac_mode = HVACMode.HEAT
                         else:
                             self._hvac_mode = HVACMode.OFF
-                        # Update target temperature from API response.
                         if self._hvac_mode in [HVACMode.HEAT, HVAC_MODE_AUTO]:
                             self._target_temperature = int(float(dev.get("heat_consign", "0")))
                         else:
                             self._target_temperature = int(float(dev.get("cold_consign", "0")))
-                        # Update fan speed if available.
                         self._fan_mode = str(dev.get("current_fan_speed", ""))
                         break
         self.schedule_update_ha_state()
 
     async def async_set_fan_mode(self, fan_mode):
-        """Override async_set_fan_mode to set the fan speed."""
-        await self.hass.async_add_executor_job(self.set_fan_speed, fan_mode)
+        """Set the fan mode asynchronously."""
+        await self.hass.async_add_executor_job(self.set_fan_mode, fan_mode)
+
+    def set_fan_mode(self, fan_mode):
+        """Set the fan mode by calling set_fan_speed."""
+        self.set_fan_speed(fan_mode)
 
     def turn_on(self):
         """Turn on the device by sending P1=1."""
@@ -184,7 +182,7 @@ class AirzoneClimate(ClimateEntity):
         """Set the HVAC mode.
         
         Mapping:
-         - HVACMode.OFF (or "off"): calls turn_off() and returns.
+         - HVACMode.OFF: call turn_off() and return.
          - HVACMode.COOL -> P2=1
          - HVACMode.HEAT -> P2=2
          - HVACMode.FAN_ONLY -> P2=3
@@ -273,10 +271,7 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def fan_speed_range(self):
-        """Return a list of valid fan speeds based on 'availables_speeds' from device data.
-        
-        The API returns 'availables_speeds' as a string (e.g., "3" or "4"). Default is 3.
-        """
+        """Return a list of valid fan speeds based on 'availables_speeds' from device data."""
         speeds_str = self._device_data.get("availables_speeds", "3")
         try:
             speeds = int(speeds_str)
@@ -298,4 +293,4 @@ class AirzoneClimate(ClimateEntity):
         if self._hass_loop:
             asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self._hass_loop)
         else:
-            _LOGGER.error("No event loop available; cannot send command.")
+            _LOGGER.error("No hass loop available; cannot send command.")
