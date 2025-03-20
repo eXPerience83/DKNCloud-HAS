@@ -47,6 +47,7 @@ class AirzoneTemperatureSensor(SensorEntity):
         device_id = self._device_data.get("id")
         if device_id and device_id.strip():
             return f"{device_id}_temperature"
+        # Fallback unique ID based on name hash
         return hashlib.sha256(self._name.encode()).hexdigest()
 
     @property
@@ -76,9 +77,9 @@ class AirzoneTemperatureSensor(SensorEntity):
 
     @property
     def device_info(self):
-        """Return device info to link the sensor to a device in HA."""
+        """Return device info to link this sensor to a device in HA."""
         return {
-            "identifiers": {("airzoneclouddaikin", self._device_data.get("id"))},
+            "identifiers": {( "airzoneclouddaikin", self._device_data.get("id") )},
             "name": self._device_data.get("name"),
             "manufacturer": self._device_data.get("brand", "Daikin"),
             "model": self._device_data.get("firmware", "Unknown"),
