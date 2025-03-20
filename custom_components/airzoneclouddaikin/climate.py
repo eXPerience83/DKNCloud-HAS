@@ -9,7 +9,7 @@ from .airzone_api import AirzoneAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-# Define a module-level constant for forced Auto mode.
+# Define a constant for forced Auto mode.
 HVAC_MODE_AUTO = HVACMode("auto")
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -45,7 +45,7 @@ class AirzoneClimate(ClimateEntity):
 
     def __init__(self, api: AirzoneAPI, device_data: dict, config: dict, hass):
         """Initialize the climate entity.
-        
+
         :param api: The AirzoneAPI instance.
         :param device_data: Dictionary with device information.
         :param config: Integration configuration.
@@ -58,8 +58,8 @@ class AirzoneClimate(ClimateEntity):
         self._device_id = device_data.get("id")
         self._hvac_mode = HVACMode.OFF
         self._target_temperature = None
-        self._fan_mode = None  # current fan speed as string (e.g., "1")
-        self._hass_loop = None  # Will be set in async_added_to_hass
+        self._fan_mode = None  # current fan speed (as string, e.g. "1")
+        self._hass_loop = None  # will be set in async_added_to_hass
         self.hass = hass
 
     async def async_added_to_hass(self):
@@ -105,7 +105,7 @@ class AirzoneClimate(ClimateEntity):
 
     @property
     def supported_features(self):
-        """Return the supported features (target temperature and fan mode)."""
+        """Return supported features: target temperature and fan mode."""
         return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
 
     @property
@@ -131,7 +131,6 @@ class AirzoneClimate(ClimateEntity):
 
     async def async_update(self):
         """Poll updated device data from the API and update state."""
-        # (This simple polling mechanism fetches all installations and updates device data if found.)
         installations = await self._api.fetch_installations()
         for relation in installations:
             installation = relation.get("installation")
@@ -140,6 +139,7 @@ class AirzoneClimate(ClimateEntity):
                 for dev in devices:
                     if dev.get("id") == self._device_id:
                         self._device_data = dev
+                        # Update HVAC mode based on power and mode fields
                         if int(dev.get("power", 0)) == 1:
                             mode_val = dev.get("mode")
                             if mode_val == "1":
@@ -161,12 +161,10 @@ class AirzoneClimate(ClimateEntity):
                             self._target_temperature = int(float(dev.get("heat_consign", "0")))
                         else:
                             self._target_temperature = int(float(dev.get("cold_consign", "0")))
+                        # Update fan speed if available.
+                        self._fan_mode = str(dev.get("current_fan_speed", ""))
                         break
         self.schedule_update_ha_state()
-
-    async def async_set_fan_mode(self, fan_mode):
-        """Asynchronously set the fan mode (speed)."""
-        await self.hass.async_add_executor_job(self.set_fan_speed, fan_mode)
 
     def turn_on(self):
         """Turn on the device by sending P1=1."""
@@ -213,7 +211,11 @@ class AirzoneClimate(ClimateEntity):
         Must be called after changing the mode.
         For HEAT or AUTO modes, use P8; for COOL mode use P7.
         The value is constrained to the device limits and sent as an integer with ".0".
+        Temperature adjustments are disabled in Dry and Fan Only modes.
         """
+        if self._hvac_mode in [HVACMode.DRY, HVACMode.FAN_ONLY]:
+            _LOGGER.warning("Temperature adjustment not supported in mode %s", self._hvac_mode)
+            return
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
             temp = int(float(temp))
@@ -236,7 +238,7 @@ class AirzoneClimate(ClimateEntity):
     def set_fan_speed(self, speed):
         """Set the fan speed.
         
-        Uses P3 to adjust fan speed in COOL and FAN_ONLY mode and P4 in HEAT/AUTO modes.
+        Uses P3 to adjust fan speed in COOL and FAN_ONLY modes and P4 in HEAT/AUTO modes.
         """
         try:
             speed = int(speed)
