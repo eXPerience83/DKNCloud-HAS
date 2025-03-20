@@ -73,6 +73,16 @@ class AirzoneTemperatureSensor(SensorEntity):
         """Return the state class."""
         return "measurement"
 
+    @property
+    def device_info(self):
+        """Return device info to link the sensor to a device in HA."""
+        return {
+            "identifiers": {("airzoneclouddaikin", self._device_data.get("id"))},
+            "name": self._device_data.get("name"),
+            "manufacturer": self._device_data.get("brand", "Daikin"),
+            "model": self._device_data.get("firmware", "Unknown"),
+        }
+
     async def async_update(self):
         """Update the sensor state."""
         self.update_state()
