@@ -45,9 +45,8 @@ class AirzoneTemperatureSensor(SensorEntity):
     def unique_id(self):
         """Return a unique ID for the sensor."""
         device_id = self._device_data.get("id")
-        if device_id:
+        if device_id and device_id.strip():
             return f"{device_id}_temperature"
-        # Fallback: use a hash of the name if id is missing.
         return hashlib.sha256(self._name.encode()).hexdigest()
 
     @property
