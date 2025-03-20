@@ -9,7 +9,13 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the switch platform from a config entry."""
-    api = hass.data[DOMAIN][entry.entry_id]["api"]
+    config = entry.data
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    session = async_get_clientsession(hass)
+    api = AirzoneAPI(config.get("username"), config.get("password"), session)
+    if not await api.login():
+        _LOGGER.error("Login to Airzone API failed in switch setup.")
+        return
     installations = await api.fetch_installations()
     switches = []
     for relation in installations:
@@ -21,7 +27,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
         devices = await api.fetch_devices(installation_id)
         for device in devices:
-            switches.append(AirzonePowerSwitch(api, device, entry.data, hass))
+            switches.append(AirzonePowerSwitch(api, device, config, hass))
     async_add_entities(switches, True)
 
 class AirzonePowerSwitch(SwitchEntity):
@@ -36,6 +42,7 @@ class AirzonePowerSwitch(SwitchEntity):
         self._device_id = device_data.get("id")
         self._state = bool(int(device_data.get("power", 0)))
         self.hass = hass
+        self._hass_loop = hass.loop
 
     @property
     def unique_id(self):
@@ -54,7 +61,7 @@ class AirzonePowerSwitch(SwitchEntity):
 
     @property
     def device_info(self):
-        """Return device info for grouping in HA device registry."""
+        """Return device info to link this switch with other entities in HA."""
         return {
             "identifiers": {(DOMAIN, self._device_id)},
             "name": self._device_data.get("name"),
@@ -63,13 +70,13 @@ class AirzonePowerSwitch(SwitchEntity):
         }
 
     async def async_turn_on(self, **kwargs):
-        """Turn on the device."""
+        """Turn on the device by sending P1=1."""
         await self.hass.async_add_executor_job(self.turn_on)
         self._state = True
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
-        """Turn off the device."""
+        """Turn off the device by sending P1=0."""
         await self.hass.async_add_executor_job(self.turn_off)
         self._state = False
         self.async_write_ha_state()
@@ -93,4 +100,7 @@ class AirzonePowerSwitch(SwitchEntity):
             }
         }
         _LOGGER.info("Sending power command: %s", payload)
-        asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self.hass.loop)
+        if self._hass_loop:
+            asyncio.run_coroutine_threadsafe(self._api.send_event(payload), self._hass_loop)
+        else:
+            _LOGGER.error("No hass loop available; cannot send command.")
