@@ -1,14 +1,21 @@
 """Sensor platform for DKN Cloud for HASS."""
+import hashlib
 import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
-from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the sensor platform from a config entry."""
-    api = hass.data[DOMAIN][entry.entry_id]["api"]
+    config = entry.data
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+    session = async_get_clientsession(hass)
+    from .airzone_api import AirzoneAPI
+    api = AirzoneAPI(config.get("username"), config.get("password"), session)
+    if not await api.login():
+        _LOGGER.error("Login to Airzone API failed in sensor setup.")
+        return
     installations = await api.fetch_installations()
     sensors = []
     for relation in installations:
@@ -32,6 +39,7 @@ class AirzoneTemperatureSensor(SensorEntity):
         self._name = f"{device_data.get('name', 'Airzone Device')} Temperature"
         self._state = None
         self._unit_of_measurement = UnitOfTemperature.CELSIUS
+        self.update_state()
 
     @property
     def unique_id(self):
@@ -39,7 +47,8 @@ class AirzoneTemperatureSensor(SensorEntity):
         device_id = self._device_data.get("id")
         if device_id:
             return f"{device_id}_temperature"
-        return None
+        # Fallback: use a hash of the name if id is missing.
+        return hashlib.sha256(self._name.encode()).hexdigest()
 
     @property
     def name(self):
@@ -68,26 +77,22 @@ class AirzoneTemperatureSensor(SensorEntity):
 
     @property
     def device_info(self):
-        """Return device info to link this sensor to a device in HA."""
+        """Return device info to link the sensor to a device in HA."""
         return {
-            "identifiers": {(DOMAIN, self._device_data.get("id"))},
+            "identifiers": {("airzoneclouddaikin", self._device_data.get("id"))},
             "name": self._device_data.get("name"),
             "manufacturer": self._device_data.get("brand", "Daikin"),
             "model": self._device_data.get("firmware", "Unknown"),
         }
 
     async def async_update(self):
-        """Update the sensor state.
-        
-        This method should be called periodically by Home Assistant.
-        """
+        """Update the sensor state."""
+        self.update_state()
+        self.async_write_ha_state()
+
+    def update_state(self):
+        """Update the state from device data."""
         try:
             self._state = float(self._device_data.get("local_temp"))
         except (ValueError, TypeError):
             self._state = None
-        self.async_write_ha_state()
-
-    @property
-    def scan_interval(self):
-        """Return the scan interval (in seconds) for the sensor."""
-        return 10
