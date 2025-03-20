@@ -28,7 +28,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         devices = await api.fetch_devices(installation_id)
         for device in devices:
             sensors.append(AirzoneTemperatureSensor(device))
-    async_add_entities(sensors, True)
+    async_add_entities(sensors)  # Do not update before add, so HA can assign entity_id.
 
 class AirzoneTemperatureSensor(SensorEntity):
     """Representation of a temperature sensor for an Airzone device (local_temp)."""
@@ -37,17 +37,19 @@ class AirzoneTemperatureSensor(SensorEntity):
         """Initialize the sensor entity using device data."""
         self._device_data = device_data
         # Set the sensor name as: "<Device Name> Temperature"
-        self._attr_name = f"{device_data.get('name', 'Airzone Device')} Temperature"
-        # Use the device id (if available) to form a unique id; otherwise, fallback to a hash of the name.
+        name = f"{device_data.get('name', 'Airzone Device')} Temperature"
+        self._attr_name = name
+        # Use the device 'id' to form a unique id; fallback to a hash of the name if not available.
         device_id = device_data.get("id")
         if device_id and device_id.strip():
             self._attr_unique_id = f"{device_id}_temperature"
         else:
-            self._attr_unique_id = hashlib.sha256(self._attr_name.encode("utf-8")).hexdigest()
+            self._attr_unique_id = hashlib.sha256(name.encode("utf-8")).hexdigest()
         self._attr_unit_of_measurement = UnitOfTemperature.CELSIUS
         self._attr_device_class = "temperature"
         self._attr_state_class = "measurement"
         self._attr_icon = "mdi:thermometer"
+        # Initialize the state value from device data
         self.update_state()
 
     @property
@@ -55,15 +57,24 @@ class AirzoneTemperatureSensor(SensorEntity):
         """Return the current temperature reading."""
         return self._attr_native_value
 
+    @property
+    def device_info(self):
+        """Return device info to link this sensor to a device in Home Assistant."""
+        return {
+            "identifiers": {("airzoneclouddaikin", self._device_data.get("id"))},
+            "name": self._device_data.get("name"),
+            "manufacturer": self._device_data.get("brand", "Daikin"),
+            "model": self._device_data.get("firmware", "Unknown"),
+        }
+
+    async def async_update(self):
+        """Update the sensor state from the device data."""
+        self.update_state()
+        self.async_write_ha_state()
+
     def update_state(self):
-        """Update the state from device data."""
+        """Update the sensor state from device data."""
         try:
-            # Update _attr_native_value with the temperature value from local_temp.
             self._attr_native_value = float(self._device_data.get("local_temp"))
         except (ValueError, TypeError):
             self._attr_native_value = None
-
-    async def async_update(self):
-        """Update the sensor state and write it to Home Assistant."""
-        self.update_state()
-        self.async_write_ha_state()
