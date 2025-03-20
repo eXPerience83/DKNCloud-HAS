@@ -36,44 +36,27 @@ class AirzoneTemperatureSensor(SensorEntity):
     def __init__(self, device_data: dict):
         """Initialize the sensor with device data."""
         self._device_data = device_data
-        self._name = f"{device_data.get('name', 'Airzone Device')} Temperature"
-        self._state = None
-        self._unit_of_measurement = UnitOfTemperature.CELSIUS
-        self.update_state()
+        # Set the sensor name based on the device name
+        name = f"{device_data.get('name', 'Airzone Device')} Temperature"
+        self._attr_name = name
 
-    @property
-    def unique_id(self):
-        """Return a unique ID for the sensor."""
-        device_id = self._device_data.get("id")
+        # Use the device 'id' from the API to create a unique ID; fall back to a hash of the name
+        device_id = device_data.get("id")
         if device_id and device_id.strip():
-            return f"{device_id}_temperature"
-        # Fallback: use a hash of the sensor name to ensure a non-empty unique_id.
-        return hashlib.sha256(self._name.encode("utf-8")).hexdigest()
+            self._attr_unique_id = f"{device_id}_temperature"
+        else:
+            self._attr_unique_id = hashlib.sha256(name.encode("utf-8")).hexdigest()
 
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
+        self._attr_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_device_class = "temperature"
+        self._attr_state_class = "measurement"
+        self._attr_icon = "mdi:thermometer"
+        self.update_state()
 
     @property
     def state(self):
         """Return the current temperature reading."""
         return self._state
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit_of_measurement
-
-    @property
-    def device_class(self):
-        """Return the device class."""
-        return "temperature"
-
-    @property
-    def state_class(self):
-        """Return the state class."""
-        return "measurement"
 
     @property
     def device_info(self):
@@ -86,7 +69,7 @@ class AirzoneTemperatureSensor(SensorEntity):
         }
 
     async def async_update(self):
-        """Update the sensor state from the device data."""
+        """Update the sensor state from device data."""
         self.update_state()
         self.async_write_ha_state()
 
