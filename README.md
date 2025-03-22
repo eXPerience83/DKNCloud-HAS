@@ -11,13 +11,16 @@ This project is a fork of [fitamix/DaikinDKNCloud-HomeAssistant](https://github.
 
 This integration uses an API client (in `airzone_api.py`) to:
 - Authenticate via the `/users/sign_in` endpoint.
-- Retrieve installations via the `/installation_relations` endpoint (using user_email and user_token in query parameters).
+- Retrieve installations via the `/installation_relations` endpoint (using `user_email` and `user_token` as query parameters).
 - Retrieve devices for each installation via the `/devices` endpoint.
 - Send control events via the `/events` endpoint.
 
-Additionally, a sensor platform is included to record the temperature from the probe (`local_temp`), enabling historical data and automations.
+Additionally, the integration provides:
+- A **climate platform** to control each air conditioner (power, HVAC mode, target temperature, and fan speed).
+- A **sensor platform** to record the temperature probe (`local_temp`).
+- A **switch platform** to control device power.
 
-Basic control methods have been implemented in `climate.py`:
+Basic control methods implemented in `climate.py` include:
 - **turn_on:** Sends an event with P1=1.
 - **turn_off:** Sends an event with P1=0.
 - **set_hvac_mode:** Sends an event with P2. Supported mappings:
@@ -27,16 +30,16 @@ Basic control methods have been implemented in `climate.py`:
   - HVACMode.FAN_ONLY: sends P2=3.
   - HVACMode.DRY: sends P2=5.
   - HVACMode.AUTO (forced via configuration): sends P2=4.
-- **set_temperature:** Sends an event with P8 for HEAT/AUTO modes or P7 for COOL mode, using the device’s temperature limits and formatting the value as an integer with ".0" appended.
-- **set_fan_speed:** Uses P3 to adjust fan speed in COOL and FAN_ONLY mode and P4 in HEAT/AUTO mode.
+- **set_temperature:** Sends an event with P8 for HEAT/AUTO modes or P7 for COOL mode, using the device’s temperature limits. The value is forced to be an integer with “.0” appended.
+- **set_fan_speed:** Uses P3 to adjust fan speed in COOL and FAN_ONLY modes and P4 in HEAT/AUTO modes.
 
-The API returns additional data (firmware, brand, available fan speeds, temperature limits, etc.) that the integration uses:
+The API returns additional data (such as firmware, brand, available fan speeds, and temperature limits) that the integration uses:
 - The field `availables_speeds` defines the valid fan speed options.
 - The fields `min_limit_cold`, `max_limit_cold`, `min_limit_heat`, and `max_limit_heat` define the valid temperature ranges.
-- Temperatures are always sent as integer values with a ".0" appended (e.g., 23 → "23.0").
+- All temperature values are sent as integers with “.0” appended (for example, 23 becomes “23.0”).
 
 > **Important:**  
-> Daikin climate equipment uses two consigns (one for heat and one for cold). Change the mode first (e.g., to heat) and then adjust the temperature. Although the original package defined modes up to "8", our tests indicate that only modes 1–5 produce an effect. Note that fan speed commands differ for cold and heat modes.
+> Daikin climate equipment uses two consigns (one for heat and one for cold). Change the mode first (e.g., to heat) and then adjust the temperature. Although the original package defined modes up to "8", our tests indicate that only modes 1–5 produce an effect. Also note that fan speed commands differ for cold and heat modes.
 
 ## Installation
 
@@ -62,7 +65,6 @@ After installation, add the integration via the Home Assistant UI by going to **
 
 The configuration will ask for:
 - **Username and Password:** Your Airzone Cloud account credentials.
-- **Scan Interval:** Time in seconds between updates.
 - **Force HVAC Mode Auto:** (Optional checkbox) If enabled, the mode "auto" (HVACMode.AUTO) will be available for selection. Use this mode under your own responsibility.
 
 ## Usage
@@ -70,12 +72,13 @@ The configuration will ask for:
 The integration retrieves your installations and devices, and creates:
 - A **climate entity** for each device (allowing control of power, HVAC mode, target temperature, and fan speed).
 - A **sensor entity** for the temperature probe (`local_temp`), which Home Assistant will record historically.
+- A **switch entity** for device power control.
 
-When you interact with the climate entity, the integration sends the corresponding events (P1, P2, P7, P8, and fan speed commands P3/P4) to the API. The sensor entity updates based on the device’s reported temperature.
+When you interact with these entities, the integration sends the corresponding events (P1, P2, P7, P8, and fan speed commands P3/P4) to the API. The sensor entity updates based on the device’s reported temperature.
 
 ## API Examples
 
-For further testing, refer to the file `info.md` for detailed information and example curl commands.
+For further testing, please refer to the `info.md` file for detailed information and example curl commands (using generic placeholders for sensitive data).
 
 ## License
 
