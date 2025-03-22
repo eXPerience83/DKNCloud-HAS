@@ -28,7 +28,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         devices = await api.fetch_devices(installation_id)
         for device in devices:
             sensors.append(AirzoneTemperatureSensor(device))
-    async_add_entities(sensors)  # Let HA assign entity_id after adding entities.
+    async_add_entities(sensors)
 
 class AirzoneTemperatureSensor(SensorEntity):
     """Representation of a temperature sensor for an Airzone device (local_temp)."""
@@ -56,11 +56,6 @@ class AirzoneTemperatureSensor(SensorEntity):
         self._attr_icon = "mdi:thermometer"
         # Initialize the native value from device data
         self.update_state()
-
-    @property
-    def unique_id(self):
-        """Return the unique id for this sensor."""
-        return self._attr_unique_id
 
     @property
     def native_value(self):
